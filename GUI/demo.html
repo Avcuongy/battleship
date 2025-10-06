@@ -29,10 +29,10 @@
       .game-container {
         width: 90%;
         height: 80vh;
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.95);
         border-radius: 20px;
         backdrop-filter: blur(10px);
-        border: 2px solid rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.8);
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -43,11 +43,11 @@
       .game-title {
         font-size: 3.5rem;
         font-weight: bold;
-        color: white;
-        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+        color: #1e3c72;
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.2);
         margin-bottom: 40px;
         letter-spacing: 4px;
-        -webkit-text-stroke: 2px rgba(255, 255, 255, 0.3);
+        -webkit-text-stroke: 2px rgba(30, 60, 114, 0.3);
       }
 
       .content-container {
@@ -59,13 +59,13 @@
 
       .login-container {
         flex: 2;
-        background: rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.8);
         border-radius: 15px;
         padding: 30px;
         display: flex;
         gap: 30px;
         align-items: center;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(30, 60, 114, 0.3);
       }
 
       .avatar-section {
@@ -80,7 +80,7 @@
         height: 150px;
         border-radius: 50%;
         background: linear-gradient(45deg, #4a5568, #2d3748);
-        border: 4px solid white;
+        border: 2px solid #1e3c72;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -88,6 +88,14 @@
         color: #8b4513;
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
         transition: transform 0.3s ease;
+        overflow: hidden;
+      }
+
+      .avatar img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
       }
 
       .avatar:hover {
@@ -96,8 +104,8 @@
 
       .refresh-badge {
         position: absolute;
-        bottom: -5px;
-        right: -5px;
+        bottom: 5px;
+        right: 5px;
         width: 35px;
         height: 35px;
         background: white;
@@ -116,7 +124,7 @@
       }
 
       .refresh-badge::before {
-        content: "🔄";
+        content: "🔄️";
         font-size: 16px;
       }
 
@@ -129,11 +137,11 @@
       }
 
       .instruction-text {
-        color: white;
+        color: #1e3c72;
         font-size: 1.2rem;
         font-weight: bold;
         text-align: center;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.5);
         letter-spacing: 1px;
       }
 
@@ -142,7 +150,7 @@
         padding: 15px 20px;
         border: 2px solid rgba(255, 255, 255, 0.7);
         border-radius: 12px;
-        background: rgba(255, 255, 255, 0.9);
+        background: #f5ebe0;
         font-size: 1.1rem;
         color: #2d3748;
         outline: none;
@@ -150,15 +158,15 @@
       }
 
       .nickname-input:focus {
-        border-color: white;
-        box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-        background: white;
+        border-color: #1e3c72;
+        box-shadow: 0 0 15px rgba(30, 60, 114, 0.3);
+        background: #f0e5d8;
       }
 
       .start-button {
-        width: 33.33%;
+        width: 25%;
         padding: 12px 20px;
-        background: linear-gradient(45deg, #f7fafc, #edf2f7);
+        background: #f5ebe0;
         color: #1e3c72;
         border: none;
         border-radius: 10px;
@@ -177,39 +185,38 @@
       .start-button:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
-        background: linear-gradient(45deg, #ffffff, #f7fafc);
+        background: #f0e5d8;
       }
 
       .start-button::before {
-        content: "⚓";
         font-size: 1.2rem;
         color: #718096;
       }
 
       .tutorial-container {
         flex: 1;
-        background: rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.8);
         border-radius: 15px;
         padding: 25px;
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(30, 60, 114, 0.3);
       }
 
       .tutorial-title {
         font-size: 1.8rem;
         font-weight: bold;
-        color: white;
+        color: #1e3c72;
         text-transform: uppercase;
         letter-spacing: 2px;
-        -webkit-text-stroke: 2px rgba(255, 255, 255, 0.3);
-        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+        -webkit-text-stroke: 2px rgba(30, 60, 114, 0.3);
+        text-shadow: 3px 3px 6px rgba(255, 255, 255, 0.5);
       }
 
       .tutorial-content {
-        color: white;
+        color: #1e3c72;
         text-align: center;
         flex: 1;
         display: flex;
@@ -221,13 +228,13 @@
       .step-number {
         font-size: 2.5rem;
         font-weight: bold;
-        color: white;
+        color: #1e3c72;
         margin-bottom: 10px;
       }
 
       .step-description {
         font-size: 1.1rem;
-        color: rgba(255, 255, 255, 0.95);
+        color: rgba(30, 60, 114, 0.8);
         line-height: 1.6;
         max-width: 300px;
         margin: 0 auto;
@@ -244,7 +251,7 @@
         width: 12px;
         height: 12px;
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.6);
+        background: rgba(30, 60, 114, 0.6);
         cursor: pointer;
         transition: all 0.3s ease;
       }
@@ -252,12 +259,12 @@
       .dot.active {
         width: 18px;
         height: 18px;
-        background: white;
-        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+        background: #1e3c72;
+        box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.3);
       }
 
       .dot:hover {
-        background: rgba(255, 255, 255, 0.8);
+        background: rgba(30, 60, 114, 0.8);
         transform: scale(1.1);
       }
 
@@ -286,7 +293,9 @@
       <div class="content-container">
         <div class="login-container">
           <div class="avatar-section">
-            <div class="avatar" id="avatar">👨🏿‍💼</div>
+            <div class="avatar" id="avatar">
+              <img src="../assets/images/daden.jpg" alt="avatar" />
+            </div>
             <div class="refresh-badge" id="refreshAvatar"></div>
           </div>
 
@@ -307,9 +316,7 @@
 
           <div class="tutorial-content" id="tutorialContent">
             <div class="step-number">1</div>
-            <div class="step-description">
-              Bạn sẽ nhận được một câu kỳ quặc để vẽ
-            </div>
+            <div class="step-description">Mỗi người chơi có 2 lưới 10×10</div>
           </div>
 
           <div class="pagination-dots">
@@ -327,36 +334,72 @@
     <script>
       // Avatar characters array
       const avatars = [
-        "https://randomuser.me/api/portraits/men/1.jpg",
-        "https://randomuser.me/api/portraits/women/2.jpg",
-        "https://randomuser.me/api/portraits/men/3.jpg",
+        "../assets/images/captain.jpg",
+        "../assets/images/daden.jpg",
+        "../assets/images/female.jpg",
       ];
       let currentAvatarIndex = 0;
 
-      // Initial avatar setup
-      document.getElementById(
-        "avatar"
-      ).innerHTML = `<img src="${avatars[currentAvatarIndex]}" alt="avatar" style="width:100%;height:100%;border-radius:50%;">`;
-
       // Tutorial steps
       const tutorialSteps = [
-        { number: "1", text: "Bạn sẽ nhận được một câu kỳ quặc để vẽ" },
-        { number: "2", text: "Sử dụng bút vẽ để tạo ra hình ảnh theo mô tả" },
-        { number: "3", text: "Hoàn thành bản vẽ trong thời gian qui định" },
-        { number: "4", text: "Đối thủ sẽ đoán bản vẽ của bạn" },
-        { number: "5", text: "Bạn cũng sẽ đoán bản vẽ của đối thủ" },
-        { number: "6", text: "Người có điểm cao hơn sẽ chiến thắng!" },
+        {
+          number: "1",
+          text: "Mỗi người chơi có 2 lưới 10×10",
+        },
+        {
+          number: "2",
+          text: "Đặt 5 tàu trên bảng: 1 tàu 2 ô, 2 tàu 3 ô, 1 tàu 4 ô, 1 tàu 5 ô",
+        },
+        {
+          number: "3",
+          text: "Lần lượt gọi tọa độ để tấn công",
+        },
+        {
+          number: "4",
+          text: "Trúng thì tiếp tục đánh, trượt (Miss) thì chuyển lượt",
+        },
+        {
+          number: "5",
+          text: "Mỗi lượt có thời gian giới hạn",
+        },
+        {
+          number: "6",
+          text: "Người đầu tiên đánh chìm hết 5 tàu của đối thủ sẽ thắng",
+        },
       ];
 
       let currentStep = 0;
+
+      // Check if images load properly
+      function checkImageLoad() {
+        const img = document.querySelector("#avatar img");
+        if (img) {
+          img.onerror = function () {
+            console.error("Failed to load image:", this.src);
+            // Fallback to emoji if image fails
+            document.getElementById("avatar").innerHTML = "👨🏿‍💼";
+          };
+          img.onload = function () {
+            console.log("Image loaded successfully:", this.src);
+          };
+        }
+      }
+
+      // Initialize on page load
+      window.addEventListener("load", function () {
+        checkImageLoad();
+      });
 
       // Avatar refresh functionality
       document
         .getElementById("refreshAvatar")
         .addEventListener("click", function () {
           currentAvatarIndex = (currentAvatarIndex + 1) % avatars.length;
-          document.getElementById("avatar").textContent =
-            avatars[currentAvatarIndex];
+          const newImg = `<img src="${avatars[currentAvatarIndex]}" alt="avatar">`;
+          document.getElementById("avatar").innerHTML = newImg;
+
+          // Check if new image loads
+          setTimeout(checkImageLoad, 100);
 
           // Add animation effect
           const avatar = document.getElementById("avatar");
@@ -401,7 +444,6 @@
             .value.trim();
           if (nickname) {
             alert(`Chào mừng ${nickname}! Trò chơi sẽ bắt đầu...`);
-            // Here you would typically navigate to the game screen
           } else {
             alert("Vui lòng nhập biệt danh!");
             document.getElementById("nicknameInput").focus();
