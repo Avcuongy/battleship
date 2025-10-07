@@ -1,0 +1,276 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Arial", sans-serif;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #3e6bb8 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.game-container {
+  width: 90%;
+  height: 80vh;
+  background: rgba(255, 255, 255, 1);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.game-title {
+  font-size: 3.5rem;
+  font-weight: bold;
+  color: #1e3c72;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.2);
+  margin-bottom: 40px;
+  letter-spacing: 4px;
+  -webkit-text-stroke: 2px rgba(30, 60, 114, 0.3);
+}
+
+.content-container {
+  display: flex;
+  width: 100%;
+  height: calc(100% - 120px);
+  gap: 30px;
+}
+
+.login-container {
+  flex: 2;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 15px;
+  padding: 30px;
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  border: 1px solid rgba(30, 60, 114, 0.3);
+}
+
+.avatar-section {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #4a5568, #2d3748);
+  border: 2px solid #1e3c72;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 75px;
+  color: #8b4513;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease;
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar:hover {
+  transform: scale(1.05);
+}
+
+.refresh-badge {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  width: 35px;
+  height: 35px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  transition: transform 0.2s ease;
+}
+
+.refresh-badge:hover {
+  transform: scale(1.1);
+}
+
+.refresh-badge::before {
+  content: "🔄️";
+  font-size: 16px;
+}
+
+.form-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 25px;
+}
+
+.instruction-text {
+  color: #1e3c72;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-align: center;
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.5);
+  letter-spacing: 1px;
+}
+
+.nickname-input {
+  width: 100%;
+  padding: 15px 20px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  background: #f5ebe0;
+  font-size: 1.1rem;
+  color: #2d3748;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.nickname-input:focus {
+  border-color: #1e3c72;
+  box-shadow: 0 0 15px rgba(30, 60, 114, 0.3);
+  background: #f0e5d8;
+}
+
+.start-button {
+  width: 25%;
+  padding: 12px 20px;
+  background: #f5ebe0;
+  color: #1e3c72;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  align-self: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.start-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  background: #f0e5d8;
+}
+
+.start-button::before {
+  content: "⚓";
+  font-size: 1.2rem;
+  color: #718096;
+}
+
+.tutorial-container {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 15px;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid rgba(30, 60, 114, 0.3);
+}
+
+.tutorial-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #1e3c72;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  -webkit-text-stroke: 2px rgba(30, 60, 114, 0.3);
+  text-shadow: 3px 3px 6px rgba(255, 255, 255, 0.5);
+}
+
+.tutorial-content {
+  color: #1e3c72;
+  text-align: center;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 15px;
+}
+
+.step-number {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #1e3c72;
+  margin-bottom: 10px;
+}
+
+.step-description {
+  font-size: 1.1rem;
+  color: rgba(30, 60, 114, 0.8);
+  line-height: 1.6;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.pagination-dots {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(30, 60, 114, 0.6);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.dot.active {
+  width: 18px;
+  height: 18px;
+  background: #1e3c72;
+  box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.3);
+}
+
+.dot:hover {
+  background: rgba(30, 60, 114, 0.8);
+  transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+  .content-container {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .login-container {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .game-title {
+    font-size: 2.5rem;
+    letter-spacing: 2px;
+  }
+}
