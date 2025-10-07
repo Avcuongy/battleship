@@ -443,12 +443,24 @@
         }
       }
 
-      // Avatar characters array
+      // Avatar images (relative to this page). We'll convert to absolute when saving.
       const avatars = [
         "../../assets/images/captain.jpg",
         "../../assets/images/daden.jpg",
         "../../assets/images/female.jpg",
       ];
+
+      // Helper: resolve a (possibly relative) path to an absolute URL
+      function toAbsolutePath(p) {
+        try {
+          if (!p) return "";
+          // Normalize Windows-style backslashes
+          const normalized = String(p).replace(/\\/g, "/");
+          return new URL(normalized, document.baseURI).href;
+        } catch (e) {
+          return p;
+        }
+      }
 
       let currentAvatarIndex = 0;
 
@@ -583,12 +595,19 @@
       }
 
       async function savePlayerSession(nickname, avatarIndex) {
-        // Generate player data - chỉ 3 trường: id, name, avatar
+        // Generate player data - 3 trường: id, name, avatar
         const playerId = generatePlayerId();
+        const DEFAULT_AVATAR = "../../assets/images/daden.jpg";
+        const rawAvatar = avatars[avatarIndex];
+        const selectedAvatar =
+          rawAvatar && String(rawAvatar).trim().length
+            ? rawAvatar
+            : DEFAULT_AVATAR;
         const playerData = {
           id: playerId,
           name: nickname,
-          avatar: avatars[avatarIndex],
+          // Store absolute path to ensure it works across pages (with default fallback)
+          avatar: toAbsolutePath(selectedAvatar),
         };
 
         // Save to localStorage (giữ nguyên để session hoạt động)
@@ -846,6 +865,26 @@
         startButton.style.opacity = "0.6";
         startButton.style.cursor = "not-allowed";
         startButton.disabled = true;
+
+        // Ensure the initial avatar displayed matches avatars[currentAvatarIndex]
+        try {
+          const avatarEl = document.getElementById("avatar");
+          const img = avatarEl ? avatarEl.querySelector("img") : null;
+          if (img && img.src) {
+            // Find the index of the currently shown image in avatars[]
+            const shown = img.src;
+            const idx = avatars.findIndex((p) => toAbsolutePath(p) === shown);
+            if (idx >= 0) {
+              currentAvatarIndex = idx;
+            }
+            // Normalize src to the canonical path from avatars[] to avoid mismatch
+            img.src = toAbsolutePath(avatars[currentAvatarIndex]);
+          } else if (avatarEl) {
+            // If no image present, inject the current avatar
+            const src = toAbsolutePath(avatars[currentAvatarIndex]);
+            avatarEl.innerHTML = `<img src="${src}" alt="avatar">`;
+          }
+        } catch (_) {}
       });
     </script>
   </body>
