@@ -102,22 +102,6 @@ function updatePagination() {
   });
 }
 
-// Start button functionality
-document
-  .getElementById("startButton")
-  .addEventListener("click", function () {
-    const nickname = document
-      .getElementById("nicknameInput")
-      .value.trim();
-    if (nickname) {
-      alert(`Chào mừng ${nickname}! Trò chơi sẽ bắt đầu...`);
-      // Here you would typically navigate to the game screen
-    } else {
-      alert("Vui lòng nhập biệt danh!");
-      document.getElementById("nicknameInput").focus();
-    }
-  });
-
 // Input enter key support
 document
   .getElementById("nicknameInput")
