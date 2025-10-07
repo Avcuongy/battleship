@@ -1,8 +1,8 @@
 // Avatar characters array
 const avatars = [
-  "../images/daden.jpg",
-  "../images/captain.jpg",
-  "../images/female.jpg",
+  "/assets/images/daden.jpg",
+  "/assets/images/captain.jpg",
+  "/assets/images/female.jpg",
 ];
 
 let currentAvatarIndex = 0;
