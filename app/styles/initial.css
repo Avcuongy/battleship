@@ -6,7 +6,7 @@
 
 body {
   font-family: "Arial", sans-serif;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #3e6bb8 100%);
+  background: #2a5298;
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -17,10 +17,10 @@ body {
 .game-container {
   width: 90%;
   height: 80vh;
-  background: rgba(255, 255, 255, 1);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 20px;
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   border: 2px solid rgba(255, 255, 255, 0.8);
   display: flex;
   flex-direction: column;
@@ -152,6 +152,16 @@ body {
   background: #f0e5d8;
 }
 
+.nickname-input:invalid,
+.nickname-input[data-invalid="true"] {
+  border-color: #d32f2f !important;
+}
+
+.nickname-input:valid,
+.nickname-input[data-valid="true"] {
+  border-color: #1e3c72 !important;
+}
+
 .start-button {
   width: 25%;
   padding: 12px 20px;
@@ -171,14 +181,19 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.start-button:hover {
+.start-button:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
   background: #f0e5d8;
 }
 
+.start-button:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
 .start-button::before {
-  content: "⚓";
   font-size: 1.2rem;
   color: #718096;
 }
