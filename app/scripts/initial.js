@@ -1,112 +1,98 @@
-// Avatar characters array
-const avatars = [
-  "/assets/images/daden.jpg",
-  "/assets/images/captain.jpg",
-  "/assets/images/female.jpg",
-];
+class BattleShipClient {
+  constructor() {
+    this.baseURL = 'http://localhost:3000';
+    this.avatars = [
+      '../../assets/images/captain.jpg',
+      '../../assets/images/daden.jpg',
+      '../../assets/images/female.jpg'
+    ];
+    this.currentAvatarIndex = 1;
+    this.init();
+  }
 
-let currentAvatarIndex = 0;
+  init() {
+    this.setupEventListeners();
+    this.updateAvatarDisplay();
+  }
 
-// Tutorial steps
-const tutorialSteps = [
-  {
-    number: "1",
-    text: "Chọn chế độ chơi: 1 người (với AI) hoặc 2 người",
-  },
-  {
-    number: "2",
-    text: "Đặt 5 tàu trên bảng: 1 tàu 2 ô, 2 tàu 3 ô, 1 tàu 4 ô, 1 tàu 5 ô",
-  },
-  {
-    number: "3",
-    text: "Lần lượt gọi tọa độ để tấn công",
-  },
-  {
-    number: "4",
-    text: "Trúng thì tiếp tục đánh, trượt (Miss) thì chuyển lượt",
-  },
-  {
-    number: "5",
-    text: "Mỗi lượt có thời gian giới hạn",
-  },
-  {
-    number: "6",
-    text: "Người đầu tiên đánh chìm hết 5 tàu của đối thủ sẽ thắng",
-  },
-];
+  setupEventListeners() {
+    // Avatar refresh
+    document.getElementById('refreshAvatar').addEventListener('click', () => {
+      this.currentAvatarIndex = (this.currentAvatarIndex + 1) % this.avatars.length;
+      this.updateAvatarDisplay();
+    });
 
-let currentStep = 0;
+    // Start button
+    document.getElementById('startButton').addEventListener('click', () => {
+      this.handleLogin();
+    });
 
-// Check if images load properly
-function checkImageLoad() {
-  const img = document.querySelector("#avatar img");
-  if (img) {
-    img.onerror = function () {
-      console.error("Failed to load image:", this.src);
-      // Fallback to emoji if image fails
-      document.getElementById("avatar").innerHTML = "👨🏿‍💼";
-    };
-    img.onload = function () {
-      console.log("Image loaded successfully:", this.src);
-    };
+    // Nickname validation
+    document.getElementById('nicknameInput').addEventListener('input', (e) => {
+      this.validateNickname(e.target.value);
+    });
+  }
+
+  updateAvatarDisplay() {
+    const img = document.querySelector('#avatar img');
+    img.src = this.avatars[this.currentAvatarIndex];
+  }
+
+  validateNickname(nickname) {
+    const isValid = /^[a-zA-Z0-9_-]{2,30}$/.test(nickname);
+    const button = document.getElementById('startButton');
+    const input = document.getElementById('nicknameInput');
+
+    if (isValid) {
+      button.disabled = false;
+      input.style.borderColor = '#4caf50';
+    } else {
+      button.disabled = true;
+      input.style.borderColor = '#d32f2f';
+    }
+    return isValid;
+  }
+
+  async handleLogin() {
+    const nickname = document.getElementById('nicknameInput').value.trim();
+
+    if (!this.validateNickname(nickname)) {
+      alert('Biệt danh không hợp lệ!');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${this.baseURL}/api/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nickname: nickname,
+          avatarIndex: this.currentAvatarIndex
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Store session with player data from backend
+        localStorage.setItem('battleship-session', JSON.stringify({
+          sessionId: result.sessionId,
+          player: result.player
+        }));
+
+        // Redirect to home
+        window.location.href = '/templates/home.html';
+      } else {
+        alert('Đăng nhập thất bại: ' + result.message);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Lỗi kết nối server!');
+    }
   }
 }
 
-// Initialize on page load
-window.addEventListener("load", function () {
-  checkImageLoad();
+// Initialize when DOM loaded
+document.addEventListener('DOMContentLoaded', () => {
+  new BattleShipClient();
 });
-
-// Avatar refresh functionality
-document
-  .getElementById("refreshAvatar")
-  .addEventListener("click", function () {
-    currentAvatarIndex = (currentAvatarIndex + 1) % avatars.length;
-    const newImg = `<img src="${avatars[currentAvatarIndex]}" alt="avatar">`;
-    document.getElementById("avatar").innerHTML = newImg;
-
-    // Check if new image loads
-    setTimeout(checkImageLoad, 100);
-
-    // Add animation effect
-    const avatar = document.getElementById("avatar");
-    avatar.style.transform = "scale(0.8)";
-    setTimeout(() => {
-      avatar.style.transform = "scale(1)";
-    }, 150);
-  });
-
-// Tutorial pagination
-const dots = document.querySelectorAll(".dot");
-const tutorialContent = document.getElementById("tutorialContent");
-
-dots.forEach((dot, index) => {
-  dot.addEventListener("click", function () {
-    currentStep = index;
-    updateTutorial();
-    updatePagination();
-  });
-});
-
-function updateTutorial() {
-  const step = tutorialSteps[currentStep];
-  tutorialContent.innerHTML = `
-    <div class="step-number">${step.number}</div>
-    <div class="step-description">${step.text}</div>
-  `;
-}
-
-function updatePagination() {
-  dots.forEach((dot, index) => {
-    dot.classList.toggle("active", index === currentStep);
-  });
-}
-
-// Input enter key support
-document
-  .getElementById("nicknameInput")
-  .addEventListener("keypress", function (e) {
-    if (e.key === "Enter") {
-      document.getElementById("startButton").click();
-    }
-  });

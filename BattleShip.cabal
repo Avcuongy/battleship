@@ -26,6 +26,8 @@ source-repository head
 library
   exposed-modules:
       Lib
+      Session
+      WebAPI
   other-modules:
       Paths_BattleShip
   autogen-modules:
@@ -34,7 +36,21 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      base >=4.7 && <5
+      aeson >=1.0
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , directory
+    , filepath
+    , random
+    , scotty
+    , stm
+    , text
+    , time
+    , uuid
+    , wai
+    , wai-cors
+    , wai-middleware-static
   default-language: Haskell2010
 
 executable BattleShip-exe
@@ -48,7 +64,21 @@ executable BattleShip-exe
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       BattleShip
+    , aeson >=1.0
     , base >=4.7 && <5
+    , bytestring
+    , containers
+    , directory
+    , filepath
+    , random
+    , scotty
+    , stm
+    , text
+    , time
+    , uuid
+    , wai
+    , wai-cors
+    , wai-middleware-static
   default-language: Haskell2010
 
 test-suite BattleShip-test
@@ -63,5 +93,19 @@ test-suite BattleShip-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       BattleShip
+    , aeson >=1.0
     , base >=4.7 && <5
+    , bytestring
+    , containers
+    , directory
+    , filepath
+    , random
+    , scotty
+    , stm
+    , text
+    , time
+    , uuid
+    , wai
+    , wai-cors
+    , wai-middleware-static
   default-language: Haskell2010

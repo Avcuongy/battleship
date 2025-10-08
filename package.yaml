@@ -21,6 +21,20 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
+- aeson >= 1.0
+- text
+- scotty
+- wai
+- wai-middleware-static
+- wai-cors
+- directory
+- time
+- containers
+- uuid
+- random
+- bytestring
+- filepath
+- stm
 
 ghc-options:
 - -Wall
