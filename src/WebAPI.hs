@@ -20,13 +20,11 @@ import Session
 -- | Login request from frontend
 data LoginRequest = LoginRequest
   { requestNickname :: Text
-  , requestAvatarIndex :: Int -- 0: captain, 1: daden, 2: female
   } deriving (Show, Generic)
 
 instance FromJSON LoginRequest where
   parseJSON = withObject "LoginRequest" $ \o -> LoginRequest
     <$> o .: "nickname"
-    <*> o .: "avatarIndex"
 
 -- | Login response to frontend
 data LoginResponse = LoginResponse
@@ -44,23 +42,9 @@ instance ToJSON LoginResponse where
     , "sessionId" .= sessionId
     ]
 
--- | Available avatars (matching frontend paths)
-avatarPaths :: [Text]
-avatarPaths = 
-  [ "../../assets/images/captain.jpg"
-  , "../../assets/images/daden.jpg"
-  , "../../assets/images/female.jpg"
-  ]
-
--- | Get avatar path by index with fallback
-getAvatarPath :: Int -> Text
-getAvatarPath idx 
-  | idx >= 0 && idx < length avatarPaths = avatarPaths !! idx
-  | otherwise = head avatarPaths -- Default to captain
-
 -- | Handle login request
 loginHandler :: LoginRequest -> IO LoginResponse
-loginHandler (LoginRequest nickname avatarIdx) = do
+loginHandler (LoginRequest nickname) = do
   -- Validate nickname
   if not (validatePlayerName nickname)
     then return $ LoginResponse False "Invalid nickname format" Nothing Nothing
@@ -68,9 +52,8 @@ loginHandler (LoginRequest nickname avatarIdx) = do
       -- Generate player ID
       playerId <- generatePlayerId
       
-      -- Create player object
-      let avatar = getAvatarPath avatarIdx
-      let player = Player playerId nickname avatar
+      -- Create player object (chỉ có id và name)
+      let player = Player playerId nickname
       
       -- Save player to file
       saveResult <- savePlayer player
@@ -108,7 +91,7 @@ getCurrentPlayerHandler = getSession
 -- | Example usage functions for testing
 testLogin :: IO ()
 testLogin = do
-  let request = LoginRequest "TestPlayer" 0
+  let request = LoginRequest "TestPlayer"
   response <- loginHandler request
   print response
 

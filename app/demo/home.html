@@ -62,30 +62,6 @@
         height: 100%;
       }
 
-      .avatar {
-        width: 140px;
-        height: 140px;
-        border-radius: 50%;
-        background: linear-gradient(45deg, #4a5568, #2d3748);
-        border: 3px solid #1e3c72;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-        transition: transform 0.3s ease;
-      }
-
-      .avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-
-      .avatar:hover {
-        transform: scale(1.05);
-      }
-
       .player-name {
         font-size: 1.6rem;
         font-weight: bold;
@@ -175,7 +151,6 @@
         }
 
         .player-info-container {
-          flex-direction: row;
           justify-content: space-around;
           padding: 20px;
         }
@@ -220,7 +195,6 @@
       <div class="content-container">
         <!-- Player Info Section (1/4) -->
         <div class="player-info-container">
-          <div class="avatar" id="playerAvatar"></div>
           <div class="player-name" id="playerName">Loading...</div>
           <div class="player-id" id="playerId">ID: Loading...</div>
         </div>
@@ -366,7 +340,7 @@
           return;
         }
 
-        // sessionData từ initial.html có cấu trúc: {id, name, avatar}
+        // sessionData từ initial.html có cấu trúc: {id, name}
         let player = sessionData;
 
         // Try to load and override with file data
@@ -382,21 +356,7 @@
             "fs";
         }
 
-        // Display avatar
-        const avatarEl = document.getElementById("playerAvatar");
-        if (
-          player.avatar &&
-          (player.avatar.endsWith(".jpg") ||
-            player.avatar.endsWith(".png") ||
-            player.avatar.endsWith(".jpeg"))
-        ) {
-          const resolved = toAbsolutePath(player.avatar);
-          avatarEl.innerHTML = `<img src="${resolved}" alt="avatar" onerror="this.style.display='none';">`;
-        } else {
-          avatarEl.innerHTML = "";
-        }
-
-        // Display player info - đúng theo cấu trúc từ initial.html
+        // Display player info - chỉ còn name và id
         document.getElementById("playerName").textContent =
           player.name || "Unknown Player";
         document.getElementById("playerId").textContent =

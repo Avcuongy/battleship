@@ -1,27 +1,14 @@
 class BattleShipClient {
   constructor() {
     this.baseURL = 'http://localhost:3000';
-    this.avatars = [
-      '../../assets/images/captain.jpg',
-      '../../assets/images/daden.jpg',
-      '../../assets/images/female.jpg'
-    ];
-    this.currentAvatarIndex = 1;
     this.init();
   }
 
   init() {
     this.setupEventListeners();
-    this.updateAvatarDisplay();
   }
 
   setupEventListeners() {
-    // Avatar refresh
-    document.getElementById('refreshAvatar').addEventListener('click', () => {
-      this.currentAvatarIndex = (this.currentAvatarIndex + 1) % this.avatars.length;
-      this.updateAvatarDisplay();
-    });
-
     // Start button
     document.getElementById('startButton').addEventListener('click', () => {
       this.handleLogin();
@@ -31,11 +18,6 @@ class BattleShipClient {
     document.getElementById('nicknameInput').addEventListener('input', (e) => {
       this.validateNickname(e.target.value);
     });
-  }
-
-  updateAvatarDisplay() {
-    const img = document.querySelector('#avatar img');
-    img.src = this.avatars[this.currentAvatarIndex];
   }
 
   validateNickname(nickname) {
@@ -66,8 +48,7 @@ class BattleShipClient {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nickname: nickname,
-          avatarIndex: this.currentAvatarIndex
+          nickname: nickname
         })
       });
 

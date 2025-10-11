@@ -18,14 +18,9 @@ class HomePageClient {
   }
 
   displayPlayer(player) {
-    // Hiển thị id, name, avatar
+    // Hiển thị id, name (không có avatar)
     document.getElementById('playerName').textContent = player.name;
     document.getElementById('playerId').textContent = `ID: ${player.id}`;
-    
-    const avatarImg = document.querySelector('#playerAvatar img');
-    if (avatarImg) {
-      avatarImg.src = player.avatar;
-    }
   }
 
   setupCleanup() {

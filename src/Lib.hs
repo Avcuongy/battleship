@@ -28,22 +28,19 @@ import qualified Data.ByteString.Lazy as LB
 data Player = Player
   { playerId :: Text    -- ^ Format: 6 alphanumeric characters (no prefix)
   , playerName :: Text  -- ^ Nickname: 2-30 chars, a-z, A-Z, 0-9, _, -
-  , playerAvatar :: Text -- ^ Full path to avatar image
   } deriving (Show, Eq, Generic)
 
 -- | JSON serialization instances
 instance ToJSON Player where
-  toJSON (Player pid name avatar) = object
+  toJSON (Player pid name) = object
     [ "id" .= pid
     , "name" .= name
-    , "avatar" .= avatar
     ]
 
 instance FromJSON Player where
   parseJSON = withObject "Player" $ \o -> Player
     <$> o .: "id"
     <*> o .: "name"
-    <*> o .: "avatar"
 
 -- | Type alias for session management
 type PlayerSession = Player
