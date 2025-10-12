@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loading</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        background: #2a5298;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+      }
+
+      .game-container {
+        width: 90%;
+        height: 80vh;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.95);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        display: flex;
+        flex-direction: row;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .content-container {
+        display: flex;
+        flex: 1;
+        width: 100%;
+        height: 100%;
+        gap: 0;
+        margin-top: 0;
+      }
+
+     .player-info-container {
+        width: 25%;
+        background: #f5f5dc;
+        border-radius: 0;
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+        padding: 30px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 25px;
+        box-shadow: none;
+        height: 100%;
+      }
+
+      .center-container {
+        width: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 0;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 40px;
+        border: none;
+      }
+
+      .player-info-container-right {
+        width: 25%;
+        background: #f5f5dc;
+        border-radius: 0;
+        border-top-right-radius: 10px;
+        border-bottom-right-radius: 10px;
+        padding: 30px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 25px;
+        box-shadow: none;
+        height: 100%;
+      }
+
+      .player-name {
+        font-size: 1.6rem;
+        font-weight: bold;
+        color: #1e3c72;
+        text-align: center;
+        letter-spacing: 1px;
+        word-break: break-word;
+      }
+
+      .player-id {
+        font-size: 1.1rem;
+        color: rgba(30, 60, 114, 0.7);
+        text-align: center;
+        letter-spacing: 2px;
+        font-family: monospace;
+      }
+
+      .player-status {
+        font-size: 0.9rem;
+        color: rgba(30, 60, 114, 0.6);
+        text-align: center;
+        font-style: italic;
+      }
+
+      .waiting-indicator {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(30, 60, 114, 0.2);
+        border-top: 4px solid #1e3c72;
+        border-radius: 50%;
+        animation: spin 1.5s linear infinite;
+      }
+
+      .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 6px solid #f3f3f3;
+        border-top: 6px solid #1e3c72;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      .loading-status {
+        font-size: 1.4rem;
+        color: #1e3c72;
+        font-weight: bold;
+        text-align: center;
+        letter-spacing: 1px;
+      }
+
+      .connection-status {
+        font-size: 0.95rem;
+        color: rgba(30, 60, 114, 0.7);
+        text-align: center;
+        margin-top: 10px;
+      }
+
+      .connection-status.connected {
+        color: #4caf50;
+      }
+
+      .connection-status.error {
+        color: #f44336;
+      }
+
+      @media (max-width: 1024px) {
+        .content-container {
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .player-info-container,
+        .center-container,
+        .player-info-container-right {
+          width: 100%;
+        }
+
+        .player-info-container,
+        .player-info-container-right {
+          justify-content: space-around;
+          padding: 20px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .player-name {
+          font-size: 1.3rem;
+        }
+
+        .player-id {
+          font-size: 1rem;
+        }
+
+        .loading-status {
+          font-size: 1.2rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <div class="content-container">
+        <!-- Player 1 Info (1/4 - Left) -->
+        <div class="player-info-container">
+          <div class="player-name" id="player1Name">Loading...</div>
+          <div class="player-id" id="player1Id">ID: Loading...</div>
+          <div class="player-status">Loading...</div>
+        </div>
+
+        <!-- Loading Center (2/4) -->
+        <div class="center-container">
+          <div class="loading-spinner"></div>
+          <div class="loading-status" id="loadingStatus">Loading...</div>
+          <div class="connection-status" id="connectionStatus">Loading...</div>
+        </div>
+
+        <!-- Player 2 Info (1/4 - Right) -->
+        <div class="player-info-container-right">
+          <div class="waiting-indicator"></div>
+          <div class="player-name" id="player2Name">Loading...</div>
+          <div class="player-id" id="player2Id">ID: Loading...</div>
+        </div>
+  </body>
+</html>

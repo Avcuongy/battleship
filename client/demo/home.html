@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Home</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        background: #2a5298;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+      }
+
+      .game-container {
+        width: 90%;
+        height: 80vh;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.95);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        display: flex;
+        flex-direction: row;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .content-container {
+        display: flex;
+        flex: 1;
+        width: 100%;
+        height: 100%;
+        gap: 0;
+        margin-top: 0;
+      }
+
+      .player-info-container {
+        width: 25%;
+        background: #f5f5dc;
+        border-radius: 0;
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+        padding: 30px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 25px;
+        box-shadow: none;
+        height: 100%;
+      }
+
+      .player-name {
+        font-size: 1.6rem;
+        font-weight: bold;
+        color: #1e3c72;
+        text-align: center;
+        letter-spacing: 1px;
+        word-break: break-word;
+      }
+
+      .player-id {
+        font-size: 1.1rem;
+        color: rgba(30, 60, 114, 0.7);
+        text-align: center;
+        letter-spacing: 2px;
+        font-family: monospace;
+      }
+
+      .mode-selection-container {
+        width: 75%;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 0;
+        border-top-right-radius: 20px;
+        border-bottom-right-radius: 20px;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 50px;
+        border: none;
+      }
+
+      .mode-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #1e3c72;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.5);
+        -webkit-text-stroke: 1px rgba(30, 60, 114, 0.3);
+      }
+
+      .mode-buttons {
+        display: flex;
+        gap: 60px;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .mode-button {
+        width: 150px;
+        height: 60px;
+        background: #f5f5dc;
+        border: 2px solid #1e3c72;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+      }
+
+      .mode-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        background: #f0f0dc;
+        border-color: #2a5298;
+      }
+
+      .mode-text {
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: #1e3c72;
+        letter-spacing: 1px;
+      }
+
+      @media (max-width: 1024px) {
+        .content-container {
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .player-info-container,
+        .mode-selection-container {
+          width: 100%;
+        }
+
+        .player-info-container {
+          justify-content: space-around;
+          padding: 20px;
+        }
+        .mode-buttons {
+          gap: 30px;
+        }
+
+        .mode-button {
+          width: 120px;
+          height: 45px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .game-title {
+          font-size: 2.5rem;
+          letter-spacing: 2px;
+        }
+
+        .mode-title {
+          font-size: 1.8rem;
+        }
+
+        .mode-buttons {
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .mode-button {
+          width: 130px;
+          height: 50px;
+        }
+
+        .mode-text {
+          font-size: 1.1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <div class="content-container">
+        <!-- Player Info Section (1/4) -->
+        <div class="player-info-container">
+          <div class="player-name" id="playerName">Loading...</div>
+          <div class="player-id" id="playerId">ID: Loading...</div>
+        </div>
+
+        <!-- Mode Selection Section (3/4) -->
+        <div class="mode-selection-container">
+          <h2 class="mode-title">CHỌN CHẾ ĐỘ CHƠI</h2>
+
+          <div class="mode-buttons">
+            <div class="mode-button" id="singlePlayerBtn">
+              <div class="mode-text">1 NGƯỜI</div>
+            </div>
+
+            <div class="mode-button" id="twoPlayerBtn">
+              <div class="mode-text">2 NGƯỜI</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Resolve a (possibly relative) path to an absolute URL based on the current document
+      function toAbsolutePath(p) {
+        try {
+          if (!p) return "";
+          // Normalize Windows-style backslashes to URL-friendly forward slashes
+          const normalized = String(p).replace(/\\/g, "/");
+          return new URL(normalized, document.baseURI).href;
+        } catch (e) {
+          return p;
+        }
+      }
+
+      // IndexedDB helpers to retrieve persisted File System Access handles
+      function openFSDB() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open("battleship-fs", 1);
+          req.onupgradeneeded = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains("handles")) {
+              db.createObjectStore("handles");
+            }
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function fsdbGet(key) {
+        const db = await openFSDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction("handles", "readonly");
+          const req = tx.objectStore("handles").get(key);
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function fsdbDelete(key) {
+        const db = await openFSDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction("handles", "readwrite");
+          tx.objectStore("handles").delete(key);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+      }
+
+      async function ensureRWPermission(dirHandle) {
+        if (!dirHandle) return false;
+        if (dirHandle.queryPermission) {
+          const cur = await dirHandle.queryPermission({ mode: "readwrite" });
+          if (cur === "granted") return true;
+          if (dirHandle.requestPermission) {
+            const res = await dirHandle.requestPermission({
+              mode: "readwrite",
+            });
+            return res === "granted";
+          }
+        }
+        return true;
+      }
+
+      async function loadFromOPFS(fileName) {
+        try {
+          if (!navigator.storage?.getDirectory) return null;
+          const root = await navigator.storage.getDirectory();
+          const dataDir = await root.getDirectoryHandle("data");
+          const playersDir = await dataDir.getDirectoryHandle("players");
+          const fileHandle = await playersDir.getFileHandle(fileName);
+          const file = await fileHandle.getFile();
+          const text = await file.text();
+          return JSON.parse(text);
+        } catch (e) {
+          return null;
+        }
+      }
+
+      // Load player session from localStorage
+      function loadPlayerSession() {
+        const saved = localStorage.getItem("battleship-player-session");
+        return saved ? JSON.parse(saved) : null;
+      }
+
+      async function loadPlayerFromFile() {
+        try {
+          const fileName =
+            (await fsdbGet("playerFileName")) ||
+            localStorage.getItem("battleship-player-file");
+          if (!fileName) return null;
+
+          const backend =
+            localStorage.getItem("battleship-storage-backend") || "fs";
+          if (backend === "opfs") {
+            const playerData = await loadFromOPFS(fileName);
+            if (playerData)
+              return { dirHandle: null, fileName, playerData, backend };
+          }
+
+          if ("showDirectoryPicker" in window) {
+            const dirHandle = await fsdbGet("playersDirHandle");
+            if (!dirHandle) return null;
+            const hasPerm = await ensureRWPermission(dirHandle);
+            if (!hasPerm) return null;
+            const fileHandle = await dirHandle.getFileHandle(fileName);
+            const file = await fileHandle.getFile();
+            const text = await file.text();
+            const playerData = JSON.parse(text);
+            return { dirHandle, fileName, playerData, backend: "fs" };
+          }
+          return null;
+        } catch (e) {
+          console.warn("Không thể đọc file người chơi:", e);
+          return null;
+        }
+      }
+
+      async function displayPlayerInfo(sessionData) {
+        if (!sessionData) {
+          alert("Không tìm thấy thông tin người chơi. Vui lòng đăng nhập lại.");
+          window.location.href = "./initial.html";
+          return;
+        }
+
+        // sessionData từ initial.html có cấu trúc: {id, name}
+        let player = sessionData;
+
+        // Try to load and override with file data
+        const fileLoad = await loadPlayerFromFile();
+        if (fileLoad && fileLoad.playerData) {
+          player = fileLoad.playerData;
+          // keep file markers available for cleanup
+          window.__playersDirHandle = fileLoad.dirHandle;
+          window.__playerFileName = fileLoad.fileName;
+          window.__storageBackend =
+            fileLoad.backend ||
+            localStorage.getItem("battleship-storage-backend") ||
+            "fs";
+        }
+
+        // Display player info - chỉ còn name và id
+        document.getElementById("playerName").textContent =
+          player.name || "Unknown Player";
+        document.getElementById("playerId").textContent =
+          `ID: ${player.id}` || "ID: Unknown";
+
+        console.log("Player data loaded:", player);
+      }
+
+      // Cleanup on exit (close/refresh). Keep file when navigating within the app.
+      async function cleanupPlayerFileOnExit() {
+        try {
+          const keep = sessionStorage.getItem("bs-keep-file") === "1";
+          if (keep) return;
+
+          // Retrieve handles if not present
+          let dirHandle =
+            window.__playersDirHandle || (await fsdbGet("playersDirHandle"));
+          let fileName =
+            window.__playerFileName ||
+            (await fsdbGet("playerFileName")) ||
+            localStorage.getItem("battleship-player-file");
+          const backend =
+            window.__storageBackend ||
+            localStorage.getItem("battleship-storage-backend");
+          if (backend === "fs" && dirHandle && fileName) {
+            try {
+              const hasPerm = await ensureRWPermission(dirHandle);
+              if (hasPerm) {
+                await dirHandle.removeEntry(fileName);
+                console.log("Đã xóa file:", fileName);
+              }
+            } catch (err) {
+              console.warn("Không thể xóa file:", err);
+            }
+          }
+          if (backend === "opfs" && fileName) {
+            try {
+              if (navigator.storage?.getDirectory) {
+                const root = await navigator.storage.getDirectory();
+                const dataDir = await root.getDirectoryHandle("data");
+                const playersDir = await dataDir.getDirectoryHandle("players");
+                await playersDir.removeEntry(fileName);
+                console.log("Đã xóa file (OPFS):", fileName);
+              }
+            } catch (e) {
+              console.warn("Không thể xóa file OPFS:", e);
+            }
+          }
+          // Clear markers
+          await fsdbDelete("playerFileName").catch(() => {});
+          await fsdbDelete("playersDirHandle").catch(() => {});
+          localStorage.removeItem("battleship-player-file");
+          localStorage.removeItem("battleship-storage-backend");
+          localStorage.removeItem("battleship-player-session");
+        } catch (e) {
+          console.warn("cleanup on exit error:", e);
+        }
+      }
+
+      // Initialize player info on page load
+      window.addEventListener("DOMContentLoaded", function () {
+        // reset navigation preservation flag on new page load
+        sessionStorage.removeItem("bs-keep-file");
+
+        const sessionData = loadPlayerSession();
+        displayPlayerInfo(sessionData);
+      });
+
+      // Cleanup events
+      window.addEventListener("beforeunload", cleanupPlayerFileOnExit);
+      window.addEventListener("pagehide", cleanupPlayerFileOnExit);
+      window.addEventListener("unload", cleanupPlayerFileOnExit);
+
+      // Mode selection handlers
+      document
+        .getElementById("singlePlayerBtn")
+        .addEventListener("click", function () {
+          console.log("Single player mode selected");
+          // Mark that we're navigating within the app
+          sessionStorage.setItem("bs-keep-file", "1");
+
+          // Tạo thông tin player 2 là AI
+          const aiPlayer = {
+            name: "Computer AI",
+            id: "AI",
+            avatar: "../../assets/images/robot.jpg", // Giả sử có ảnh AI, nếu không có sẽ dùng default
+          };
+
+          // Lưu thông tin AI vào localStorage để loading.html có thể sử dụng
+          localStorage.setItem("battleship-player-2", JSON.stringify(aiPlayer));
+
+          // Navigate to loading page
+          window.location.href = "./loading.html";
+        });
+
+      document
+        .getElementById("twoPlayerBtn")
+        .addEventListener("click", function () {
+          console.log("Two player mode selected");
+          // Mark that we're navigating within the app
+          sessionStorage.setItem("bs-keep-file", "1");
+
+          // Tạo thông tin player 2 là người chơi thứ 2
+          // Trong thực tế, đây có thể là thông tin từ server hoặc sẽ được cập nhật sau
+          const humanPlayer = {
+            name: "Player 2",
+            id: generatePlayerId(),
+            avatar: "../../assets/images/daden.jpg", // Placeholder avatar
+          };
+
+          // Lưu thông tin player 2 vào localStorage để loading.html có thể sử dụng
+          localStorage.setItem(
+            "battleship-player-2",
+            JSON.stringify(humanPlayer)
+          );
+
+          // Navigate to loading page
+          window.location.href = "./loading.html";
+        });
+
+      // Hàm tạo ID ngẫu nhiên cho player 2
+      function generatePlayerId() {
+        return "P2_" + Math.random().toString(36).substr(2, 9);
+      }
+    </script>
+  </body>
+</html>

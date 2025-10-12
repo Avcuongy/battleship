@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loading</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        background: #2a5298;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+      }
+
+      .game-container {
+        width: 90%;
+        height: 80vh;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.95);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        display: flex;
+        flex-direction: row;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .content-container {
+        display: flex;
+        flex: 1;
+        width: 100%;
+        height: 100%;
+        gap: 0;
+        margin-top: 0;
+      }
+
+      /* Player 1 Section (1/4 - Left) */
+      .player-info-container {
+        width: 25%;
+        background: #f5f5dc;
+        border-radius: 0;
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+        padding: 30px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 25px;
+        box-shadow: none;
+        height: 100%;
+      }
+
+      /* Center Section (2/4) */
+      .center-container {
+        width: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 0;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 30px;
+        border: none;
+      }
+
+      /* AI Section (1/4 - Right) */
+      .ai-info-container {
+        width: 25%;
+        background: #f5f5dc;
+        border-radius: 0;
+        border-top-right-radius: 10px;
+        border-bottom-right-radius: 10px;
+        padding: 30px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 25px;
+        box-shadow: none;
+        height: 100%;
+      }
+
+      .player-name {
+        font-size: 1.6rem;
+        font-weight: bold;
+        color: #1e3c72;
+        text-align: center;
+        letter-spacing: 1px;
+        word-break: break-word;
+      }
+
+      .player-id {
+        font-size: 1.1rem;
+        color: rgba(30, 60, 114, 0.7);
+        text-align: center;
+        letter-spacing: 2px;
+        font-family: monospace;
+      }
+
+      /* Room ID Display - Smaller size */
+      .room-id-display {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #1e3c72;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        letter-spacing: 2px;
+        text-align: center;
+      }
+
+      .start-button {
+        width: 200px;
+        padding: 15px 30px;
+        background: #f5f5dc;
+        color: #1e3c72;
+        border: 2px solid #1e3c72;
+        border-radius: 10px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        letter-spacing: 2px;
+      }
+
+      .start-button:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        background: #f0f0dc;
+        border-color: #2a5298;
+      }
+
+      @media (max-width: 1024px) {
+        .content-container {
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .player-info-container,
+        .center-container,
+        .ai-info-container {
+          width: 100%;
+        }
+
+        .player-info-container,
+        .ai-info-container {
+          justify-content: space-around;
+          padding: 20px;
+        }
+
+        .center-container {
+          gap: 25px;
+          padding: 30px;
+        }
+
+        .room-id-display {
+          font-size: 1.6rem;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .player-name {
+          font-size: 1.3rem;
+        }
+
+        .player-id {
+          font-size: 1rem;
+        }
+
+        .room-id-display {
+          font-size: 1.4rem;
+          letter-spacing: 1px;
+        }
+
+        .start-button {
+          width: 160px;
+          padding: 12px 24px;
+          font-size: 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <div class="content-container">
+        <!-- Player 1 Info (1/4 - Left) -->
+        <div class="player-info-container">
+          <div class="player-name" id="player1Name">Loading...</div>
+          <div class="player-id" id="player1Id">ID: Loading...</div>
+        </div>
+
+        <!-- Center Section (2/4) -->
+        <div class="center-container">
+          <div class="room-id-display">ROOM ID: AI</div>
+          <button class="start-button" id="startButton" disabled>
+            BẮT ĐẦU
+          </button>
+        </div>
+
+        <!-- AI Info (1/4 - Right) -->
+        <div class="ai-info-container">
+          <div class="player-name">AI</div>
+          <div class="player-id">ID: AI</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ===== IndexedDB Helpers =====
+      function openFSDB() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open("battleship-fs", 1);
+          req.onupgradeneeded = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains("handles")) {
+              db.createObjectStore("handles");
+            }
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function fsdbGet(key) {
+        try {
+          const db = await openFSDB();
+          return new Promise((resolve, reject) => {
+            const tx = db.transaction("handles", "readonly");
+            const req = tx.objectStore("handles").get(key);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+          });
+        } catch (e) {
+          return null;
+        }
+      }
+
+      // ===== Load Player Session =====
+      function loadPlayerSession() {
+        const saved = localStorage.getItem("battleship-player-session");
+        return saved ? JSON.parse(saved) : null;
+      }
+
+      // ===== Load from OPFS =====
+      async function loadFromOPFS(fileName) {
+        try {
+          if (!navigator.storage?.getDirectory) return null;
+          const root = await navigator.storage.getDirectory();
+          const dataDir = await root.getDirectoryHandle("data");
+          const playersDir = await dataDir.getDirectoryHandle("players");
+          const fileHandle = await playersDir.getFileHandle(fileName);
+          const file = await fileHandle.getFile();
+          const text = await file.text();
+          return JSON.parse(text);
+        } catch (e) {
+          return null;
+        }
+      }
+
+      // ===== Load Player from File =====
+      async function loadPlayerFromFile() {
+        try {
+          const fileName =
+            (await fsdbGet("playerFileName")) ||
+            localStorage.getItem("battleship-player-file");
+          if (!fileName) return null;
+
+          const playerData = await loadFromOPFS(fileName);
+          if (playerData) {
+            console.log("Player data loaded from OPFS");
+            return { playerData, backend: "opfs" };
+          }
+
+          const backend =
+            localStorage.getItem("battleship-storage-backend") || "fs";
+          if (backend === "fs" && "showDirectoryPicker" in window) {
+            const dirHandle = await fsdbGet("playersDirHandle");
+            if (!dirHandle) return null;
+
+            const fileHandle = await dirHandle.getFileHandle(fileName);
+            const file = await fileHandle.getFile();
+            const text = await file.text();
+            const playerData = JSON.parse(text);
+            return { playerData, backend: "fs" };
+          }
+
+          return null;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      // ===== Display Player Info =====
+      function displayPlayerInfo(player) {
+        if (!player) return;
+
+        document.getElementById("player1Name").textContent =
+          player.name || "Unknown";
+        document.getElementById("player1Id").textContent = player.id
+          ? `ID: ${player.id}`
+          : "ID: Unknown";
+      }
+
+      // ===== Setup AI Game =====
+      async function setupAIGame() {
+        try {
+          // Load Player 1
+          const sessionData = loadPlayerSession();
+
+          if (!sessionData) {
+            alert(
+              "Không tìm thấy thông tin người chơi. Vui lòng đăng nhập lại."
+            );
+            window.location.href = "./initial.html";
+            return;
+          }
+
+          let player1 = sessionData;
+
+          // Try load from file
+          const fileLoad = await loadPlayerFromFile();
+          if (fileLoad && fileLoad.playerData) {
+            player1 = fileLoad.playerData;
+          }
+
+          displayPlayerInfo(player1);
+
+          // Save AI opponent info
+          const aiOpponent = {
+            id: "AI",
+            name: "AI",
+            isAI: true,
+          };
+          localStorage.setItem(
+            "battleship-player-2",
+            JSON.stringify(aiOpponent)
+          );
+          localStorage.setItem("battleship-game-mode", "single");
+
+          // Enable start button immediately
+          const startButton = document.getElementById("startButton");
+          startButton.disabled = false;
+
+          console.log("AI game setup complete");
+        } catch (error) {
+          console.error("Error setting up AI game:", error);
+          alert("Có lỗi xảy ra. Đang quay lại...");
+
+          setTimeout(() => {
+            window.location.href = "./home.html";
+          }, 1000);
+        }
+      }
+
+      // ===== Handle Start Button Click =====
+      document
+        .getElementById("startButton")
+        .addEventListener("click", function () {
+          if (this.disabled) return;
+
+          console.log("Start button clicked - navigating to ship placement");
+
+          // Disable button to prevent multiple clicks
+          this.disabled = true;
+
+          // Navigate to ship placement
+          sessionStorage.setItem("bs-keep-file", "1");
+
+          setTimeout(() => {
+            window.location.href = "./gameplay/put_ship.html";
+          }, 300);
+        });
+
+      // ===== Initialize =====
+      window.addEventListener("DOMContentLoaded", async function () {
+        console.log("AI Loading screen initialized");
+        await setupAIGame();
+      });
+    </script>
+  </body>
+</html>

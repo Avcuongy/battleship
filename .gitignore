@@ -24,6 +24,5 @@ cabal.project.local~
 data/
 .vscode/
 .hintrc
-demo/
 __pycache__/
 Structure.md
