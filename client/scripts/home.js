@@ -1,52 +1,56 @@
-class HomePageClient {
-  constructor() {
-    this.loadPlayerData();
-    this.setupCleanup();
-  }
-
-  loadPlayerData() {
-    // Lấy từ localStorage (NOT từ file JSON)
-    const sessionData = JSON.parse(localStorage.getItem('battleship-session'));
-    
-    if (!sessionData || !sessionData.player) {
-      // Không có session → redirect về initial
-      window.location.href = '/templates/initial.html';
-      return;
+document.addEventListener('DOMContentLoaded', () => {
+    // Check if user is logged in
+    if (!SessionManager.isLoggedIn()) {
+        console.log('No session found, redirecting to initial...');
+        window.location.href = './initial.html';
+        return;
     }
-
-    this.displayPlayer(sessionData.player);
-  }
-
-  displayPlayer(player) {
-    // Hiển thị id, name (không có avatar)
+    
+    // Load and display player data
+    const session = SessionManager.getSession();
+    const player = session.player;
+    
     document.getElementById('playerName').textContent = player.name;
     document.getElementById('playerId').textContent = `ID: ${player.id}`;
-  }
-
-  setupCleanup() {
-    // Auto logout khi đóng web
-    window.addEventListener('beforeunload', () => {
-      this.logout();
+    
+    // Set up mode selection buttons
+    const singlePlayerBtn = document.getElementById('singlePlayerBtn');
+    const twoPlayerBtn = document.getElementById('twoPlayerBtn');
+    
+    // Single player (AI mode) - Active
+    singlePlayerBtn.addEventListener('click', async () => {
+        singlePlayerBtn.style.opacity = '0.7';
+        singlePlayerBtn.style.pointerEvents = 'none';
+        
+        try {
+            // Create AI room
+            console.log('Creating AI room...');
+            const roomData = await BattleShipAPI.createRoom(player.id, 'AI');
+            
+            console.log('Room created:', roomData);
+            
+            // Save room data to game state
+            SessionManager.updateGameState({
+                roomId: roomData.roomId,
+                gameMode: 'AI',
+                playerId: player.id
+            });
+            
+            // Navigate to AI loading page
+            window.location.href = './ai/loading.html';
+            
+        } catch (error) {
+            console.error('Failed to create AI room:', error);
+            alert('Không thể tạo phòng chơi. Vui lòng thử lại!');
+            singlePlayerBtn.style.opacity = '1';
+            singlePlayerBtn.style.pointerEvents = 'auto';
+        }
     });
-  }
-
-  async logout() {
-    const sessionData = JSON.parse(localStorage.getItem('battleship-session'));
-    if (sessionData?.sessionId) {
-      try {
-        await fetch('http://localhost:3000/api/logout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId: sessionData.sessionId })
-        });
-      } catch (error) {
-        console.error('Logout error:', error);
-      }
-    }
-    localStorage.removeItem('battleship-session');
-  }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  new HomePageClient();
+    
+    // Two player (1vs1 mode) - Disabled (do not handle)
+    twoPlayerBtn.addEventListener('click', () => {
+        alert('Chế độ 2 người chưa được hỗ trợ!');
+    });
+    
+    console.log('Home page loaded for player:', player.name);
 });

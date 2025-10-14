@@ -361,7 +361,7 @@
           const writable = await fileHandle.createWritable();
           await writable.write(contents);
           await writable.close();
-          
+
           // Lưu thông tin về file và directory để các trang khác có thể truy cập
           await fsdbPut("opfsPlayersDir", playersDir).catch(() => {});
           localStorage.setItem("battleship-player-file", fileName);
@@ -373,13 +373,6 @@
           return false;
         }
       }
-
-      // Avatar images (relative to this page). We'll convert to absolute when saving.
-      const avatars = [
-        "../../assets/images/captain.jpg",
-        "../../assets/images/daden.jpg",
-        "../../assets/images/female.jpg",
-      ];
 
       // Helper: resolve a (possibly relative) path to an absolute URL
       function toAbsolutePath(p) {
@@ -416,10 +409,10 @@
           const fileName = `${playerData.id}.json`;
           const playerJson = JSON.stringify(playerData, null, 2);
 
-          // Ưu tiên lưu vào OPFS trước để đảm bảo dữ liệu được giữ lại 
+          // Ưu tiên lưu vào OPFS trước để đảm bảo dữ liệu được giữ lại
           // mà không cần tương tác người dùng
           let saved = false;
-          
+
           // Thử lưu vào OPFS (Origin Private File System)
           const opfsSaved = await saveToOPFS(fileName, playerJson);
           if (opfsSaved) {
@@ -602,7 +595,7 @@
         // Initialize tutorial content
         updateTutorial();
         updatePagination();
-        
+
         // Clear any existing session data on fresh page load
         // This ensures a completely fresh start every time
         console.log("Page loaded - clearing any existing session data");
@@ -650,14 +643,14 @@
       function setupTutorialPagination() {
         const dots = document.querySelectorAll(".dot");
         const tutorialContent = document.getElementById("tutorialContent");
-        
+
         if (!dots.length || !tutorialContent) {
           console.error("Tutorial elements not found!");
           return;
         }
-        
+
         dots.forEach((dot, index) => {
-          dot.addEventListener("click", function(e) {
+          dot.addEventListener("click", function (e) {
             e.preventDefault();
             currentStep = parseInt(dot.getAttribute("data-step") || index);
             updateTutorial();
@@ -666,11 +659,11 @@
           });
         });
       }
-      
+
       function updateTutorial() {
         const tutorialContent = document.getElementById("tutorialContent");
         if (!tutorialContent) return;
-        
+
         const step = tutorialSteps[currentStep] || tutorialSteps[0];
         tutorialContent.innerHTML = `
             <div class="step-number">${step.number}</div>
@@ -681,7 +674,7 @@
       function updatePagination() {
         const dots = document.querySelectorAll(".dot");
         if (!dots.length) return;
-        
+
         dots.forEach((dot, index) => {
           if (index === currentStep) {
             dot.classList.add("active");
@@ -690,7 +683,7 @@
           }
         });
       }
-      
+
       // Setup tutorial pagination when DOM is loaded
       document.addEventListener("DOMContentLoaded", setupTutorialPagination);
 
@@ -699,7 +692,7 @@
         .getElementById("startButton")
         .addEventListener("click", async function (e) {
           e.preventDefault(); // Prevent any default form submission
-          
+
           console.log("Start button clicked");
           const nickname = document
             .getElementById("nicknameInput")
@@ -737,17 +730,17 @@
           // Disable the button to prevent multiple clicks
           const startButton = document.getElementById("startButton");
           startButton.disabled = true;
-          
+
           try {
             // Save player session and data
             const playerData = await savePlayerSession(nickname);
-            
+
             // Player created with ID
             console.log(`Player created: ${playerData.id}`);
-            
+
             // Mark that we're navigating within the app (don't delete file/session on this unload)
             sessionStorage.setItem("bs-keep-file", "1");
-            
+
             // Navigate to home page after a short delay to allow file save to complete
             setTimeout(() => {
               window.location.href = "./home.html";
@@ -755,7 +748,7 @@
           } catch (error) {
             console.error("Lỗi khi lưu dữ liệu người chơi:", error);
             alert("Có lỗi xảy ra khi lưu dữ liệu. Vui lòng thử lại.");
-            
+
             // Re-enable the button
             startButton.disabled = false;
             startButton.textContent = "BẮT ĐẦU";
@@ -821,13 +814,13 @@
         startButton.style.opacity = "0.6";
         startButton.style.cursor = "not-allowed";
         startButton.disabled = true;
-        
+
         // Check if nickname field has value and update button state accordingly
         const nicknameInput = document.getElementById("nicknameInput");
         if (nicknameInput.value.trim()) {
-          nicknameInput.dispatchEvent(new Event('input'));
+          nicknameInput.dispatchEvent(new Event("input"));
         }
-        
+
         // Set up tutorial
         updateTutorial();
         updatePagination();
