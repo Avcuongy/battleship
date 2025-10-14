@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../../styles/ai/setup.css" />
+    <title>Setup</title>
+  </head>
+  <body>
+    <div class="game-container">
+      <!-- Player Info Bar - 1/5 màn hình -->
+      <div class="player-info-bar">
+        <!-- Player 1 - Góc trái -->
+        <div class="player-info left">
+          <div class="player-name" id="player1Name">Loading...</div>
+          <div class="player-status not-ready" id="player1Status">
+            Not Ready
+          </div>
+        </div>
+
+        <!-- Title - Center -->
+        <div class="setup-title-center">ĐẶT TÀU</div>
+
+        <!-- Player 2 - Góc phải -->
+        <div class="player-info right">
+          <div class="player-name" id="player2Name">AI</div>
+          <div class="player-status ready" id="player2Status">Ready</div>
+        </div>
+      </div>
+
+      <!-- Game Area - 4/5 màn hình -->
+      <div class="game-area">
+        <!-- Instructions Left -->
+        <div class="instructions-left">
+          <div class="instruction-title">ĐẶT TÀU</div>
+          <div class="instruction-text">Chuột trái để đặt</div>
+        </div>
+
+        <!-- Main Setup Content -->
+        <div class="setup-content">
+          <!-- Board - Left side -->
+          <div class="board-section">
+            <div class="board-container">
+              <div class="game-board" id="gameBoard"></div>
+            </div>
+          </div>
+
+          <!-- Right side - Ships and Buttons -->
+          <div class="right-section">
+            <!-- Ships list -->
+            <div class="ships-section">
+              <!-- Carrier - 5 cells -->
+              <div class="ship-item" data-size="5" data-name="carrier">
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+              </div>
+
+              <!-- Battleship - 4 cells -->
+              <div class="ship-item" data-size="4" data-name="battleship">
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+              </div>
+
+              <!-- Cruiser - 3 cells -->
+              <div class="ship-item" data-size="3" data-name="cruiser">
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+              </div>
+
+              <!-- Submarine - 3 cells -->
+              <div class="ship-item" data-size="3" data-name="submarine">
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+              </div>
+
+              <!-- Destroyer - 2 cells -->
+              <div class="ship-item" data-size="2" data-name="destroyer">
+                <div class="ship-cell"></div>
+                <div class="ship-cell"></div>
+              </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="buttons-section">
+              <button class="btn" id="resetBtn">ĐẶT LẠI</button>
+              <button class="btn btn-primary" id="readyBtn" disabled>
+                SẴN SÀNG
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Instructions Right -->
+        <div class="instructions-right">
+          <div class="instruction-title">XOAY TÀU</div>
+          <div class="instruction-text">Chuột phải để xoay</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

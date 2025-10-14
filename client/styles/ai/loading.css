@@ -14,7 +14,7 @@ body {
 }
 .game-container {
   width: 90%;
-  height: 80vh;
+  height: 90vh;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.95);
   -webkit-backdrop-filter: blur(10px);

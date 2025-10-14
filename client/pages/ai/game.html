@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Battleship Game</title>
+    <link rel="stylesheet" href="../../styles/ai/game.css" />
+  </head>
+  <body>
+    <div class="game-container">
+      <!-- Player Info Bar - 1/5 màn hình -->
+      <div class="player-info-bar">
+        <!-- Player 1 - Góc trái -->
+        <div class="player-info left">
+          <div class="player-name" id="player1Name">Loading...</div>
+        </div>
+
+        <!-- Turn indicator & Timer - Center -->
+        <div class="turn-info-center">
+          <div class="turn-indicator your" id="turnIndicator">Your Turn</div>
+          <div class="timer" id="timer">20s</div>
+        </div>
+
+        <!-- Player 2 - Góc phải -->
+        <div class="player-info right">
+          <div class="player-name" id="player2Name">AI</div>
+        </div>
+      </div>
+
+      <!-- Game Area - 4/5 màn hình -->
+      <div class="game-area">
+        <!-- Player Board - Left (50%) -->
+        <div class="board-container" id="playerBoardContainer">
+          <div class="board-title">YOUR BOARD</div>
+          <div class="game-board" id="playerBoard"></div>
+        </div>
+
+        <!-- Enemy Board - Right (50%) -->
+        <div class="board-container active" id="enemyBoardContainer">
+          <div class="board-title">ENEMY BOARD</div>
+          <div class="game-board" id="enemyBoard"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audio -->
+    <audio
+      id="fireSound"
+      src="../assets/audio/ship-fire.mp3"
+      preload="auto"
+    ></audio>
+  </body>
+</html>
