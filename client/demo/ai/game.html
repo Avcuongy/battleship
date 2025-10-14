@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Battleship Game</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        background: #2a5298;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+      }
+
+      .game-container {
+        width: 90%;
+        height: 80vh;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.95);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      /* Player Info Bar - 1/5 height (20%) */
+      .player-info-bar {
+        height: 20%;
+        background: #f5ebe0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 40px;
+        border-bottom: 2px solid rgba(30, 60, 114, 0.2);
+        position: relative;
+      }
+
+      .player-info {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .player-info.left {
+        align-items: flex-start;
+      }
+
+      .player-info.right {
+        align-items: flex-end;
+      }
+
+      .player-name {
+        font-size: 1.6rem;
+        font-weight: bold;
+        color: #1e3c72;
+        letter-spacing: 1px;
+      }
+
+      /* Center - Turn indicator and timer */
+      .turn-info-center {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .turn-indicator {
+        font-size: 1.8rem;
+        font-weight: bold;
+        letter-spacing: 2px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .turn-indicator.enemy {
+        color: #f44336;
+      }
+
+      .turn-indicator.your {
+        color: #4caf50;
+      }
+
+      .timer {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #f44336;
+        font-family: "Courier New", monospace;
+        letter-spacing: 2px;
+      }
+
+      /* Game Area - 4/5 height (80%) */
+      .game-area {
+        height: 80%;
+        background: #ffffff;
+        display: flex;
+        padding: 20px;
+        gap: 20px;
+      }
+
+      /* Board container - 50% each */
+      .board-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        padding: 20px;
+        border-radius: 10px;
+        background: rgba(245, 235, 224, 0.3);
+        transition: all 0.3s ease;
+      }
+
+      .board-container.active {
+        border: 3px solid #ff9800;
+        box-shadow: 0 0 20px rgba(255, 152, 0, 0.5);
+      }
+
+      .board-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #1e3c72;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+
+      .game-board {
+        display: grid;
+        grid-template-columns: repeat(10, 35px);
+        grid-template-rows: repeat(10, 35px);
+        gap: 2px;
+        background: white;
+        padding: 2px;
+        border: 3px solid #1e3c72;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      .cell {
+        width: 35px;
+        height: 35px;
+        background: #87ceeb;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        position: relative;
+      }
+
+      .cell:hover {
+        transform: scale(1.1);
+        z-index: 10;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      .cell.ship {
+        background: #2e7d32;
+      }
+
+      .cell.miss {
+        background: #9e9e9e;
+        cursor: not-allowed;
+      }
+
+      .cell.hit {
+        background: #f44336;
+        cursor: not-allowed;
+      }
+
+      .cell.miss::after {
+        color: white;
+        font-size: 20px;
+      }
+
+      .cell.hit::after {
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+      }
+
+      /* Disable hover on hit/miss cells */
+      .cell.miss:hover,
+      .cell.hit:hover {
+        transform: none;
+        box-shadow: none;
+      }
+
+      @media (max-width: 1024px) {
+        .game-area {
+          flex-direction: column;
+          gap: 15px;
+          padding: 15px;
+        }
+
+        .board-container {
+          padding: 15px;
+        }
+
+        .game-board {
+          grid-template-columns: repeat(10, 30px);
+          grid-template-rows: repeat(10, 30px);
+        }
+
+        .cell {
+          width: 30px;
+          height: 30px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .player-name {
+          font-size: 1.3rem;
+        }
+
+        .turn-indicator {
+          font-size: 1.4rem;
+        }
+
+        .timer {
+          font-size: 1.2rem;
+        }
+
+        .board-title {
+          font-size: 1.2rem;
+        }
+
+        .game-board {
+          grid-template-columns: repeat(10, 25px);
+          grid-template-rows: repeat(10, 25px);
+        }
+
+        .cell {
+          width: 25px;
+          height: 25px;
+          font-size: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <!-- Player Info Bar - 1/5 màn hình -->
+      <div class="player-info-bar">
+        <!-- Player 1 - Góc trái -->
+        <div class="player-info left">
+          <div class="player-name" id="player1Name">Loading...</div>
+        </div>
+
+        <!-- Turn indicator & Timer - Center -->
+        <div class="turn-info-center">
+          <div class="turn-indicator your" id="turnIndicator">Your Turn</div>
+          <div class="timer" id="timer">20s</div>
+        </div>
+
+        <!-- Player 2 - Góc phải -->
+        <div class="player-info right">
+          <div class="player-name" id="player2Name">AI</div>
+        </div>
+      </div>
+
+      <!-- Game Area - 4/5 màn hình -->
+      <div class="game-area">
+        <!-- Player Board - Left (50%) -->
+        <div class="board-container" id="playerBoardContainer">
+          <div class="board-title">YOUR BOARD</div>
+          <div class="game-board" id="playerBoard"></div>
+        </div>
+
+        <!-- Enemy Board - Right (50%) -->
+        <div class="board-container active" id="enemyBoardContainer">
+          <div class="board-title">ENEMY BOARD</div>
+          <div class="game-board" id="enemyBoard"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audio -->
+    <audio
+      id="fireSound"
+      src="../assets/audio/ship-fire.mp3"
+      preload="auto"
+    ></audio>
+
+    <script>
+      const gameState = {
+        playerBoard: Array(100).fill(null),
+        enemyBoard: Array(100).fill(null),
+        playerShips: [],
+        enemyShips: [],
+        currentTurn: "player", // 'player' or 'enemy'
+        timer: 20,
+        timerInterval: null,
+        gameOver: false,
+      };
+
+      // Initialize boards
+      function initBoards() {
+        // Create player board
+        const playerBoardEl = document.getElementById("playerBoard");
+        for (let i = 0; i < 100; i++) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.dataset.index = i;
+          playerBoardEl.appendChild(cell);
+        }
+
+        // Create enemy board
+        const enemyBoardEl = document.getElementById("enemyBoard");
+        for (let i = 0; i < 100; i++) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.dataset.index = i;
+          cell.addEventListener("click", () => playerFire(i));
+          enemyBoardEl.appendChild(cell);
+        }
+      }
+
+      // Load player ships from localStorage
+      function loadPlayerShips() {
+        const shipsData = localStorage.getItem("player-ships");
+        if (shipsData) {
+          gameState.playerShips = JSON.parse(shipsData);
+
+          // Display ships on player board
+          gameState.playerShips.forEach((ship) => {
+            ship.positions.forEach((pos) => {
+              gameState.playerBoard[pos] = ship.name;
+              const cell = document.querySelector(
+                `#playerBoard .cell[data-index="${pos}"]`
+              );
+              if (cell) cell.classList.add("ship");
+            });
+          });
+        }
+      }
+
+      // Generate AI ships
+      function generateAIShips() {
+        const shipSizes = [5, 4, 3, 3, 2];
+        const ships = [];
+
+        shipSizes.forEach((size, index) => {
+          let placed = false;
+          let attempts = 0;
+
+          while (!placed && attempts < 100) {
+            const isHorizontal = Math.random() < 0.5;
+            const startIndex = Math.floor(Math.random() * 100);
+            const positions = [];
+
+            for (let i = 0; i < size; i++) {
+              if (isHorizontal) {
+                const pos = startIndex + i;
+                if (
+                  Math.floor(startIndex / 10) === Math.floor(pos / 10) &&
+                  pos < 100
+                ) {
+                  positions.push(pos);
+                }
+              } else {
+                positions.push(startIndex + i * 10);
+              }
+            }
+
+            if (
+              positions.length === size &&
+              positions.every(
+                (pos) => pos >= 0 && pos < 100 && !gameState.enemyBoard[pos]
+              )
+            ) {
+              positions.forEach((pos) => {
+                gameState.enemyBoard[pos] = `ship_${index}`;
+              });
+              ships.push({ name: `ship_${index}`, positions, hits: 0 });
+              placed = true;
+            }
+
+            attempts++;
+          }
+        });
+
+        gameState.enemyShips = ships;
+        console.log("AI ships generated:", ships);
+      }
+
+      // Player fires at enemy board
+      function playerFire(index) {
+        if (gameState.currentTurn !== "player" || gameState.gameOver) return;
+
+        const cell = document.querySelector(
+          `#enemyBoard .cell[data-index="${index}"]`
+        );
+        if (cell.classList.contains("hit") || cell.classList.contains("miss")) {
+          return; // Already fired here
+        }
+
+        // Check if hit
+        if (gameState.enemyBoard[index]) {
+          // HIT!
+          cell.classList.add("hit");
+          playSound();
+
+          // Find ship and increment hits
+          const ship = gameState.enemyShips.find((s) =>
+            s.positions.includes(index)
+          );
+          if (ship) {
+            ship.hits++;
+            if (ship.hits === ship.positions.length) {
+              console.log("Ship sunk!", ship.name);
+              checkWin();
+            }
+          }
+        } else {
+          // MISS
+          cell.classList.add("miss");
+        }
+
+        // Switch turn
+        switchTurn();
+      }
+
+      // AI fires at player board
+      function aiFire() {
+        // Simple random AI
+        let validTargets = [];
+        for (let i = 0; i < 100; i++) {
+          const cell = document.querySelector(
+            `#playerBoard .cell[data-index="${i}"]`
+          );
+          if (
+            !cell.classList.contains("hit") &&
+            !cell.classList.contains("miss")
+          ) {
+            validTargets.push(i);
+          }
+        }
+
+        if (validTargets.length === 0) return;
+
+        const targetIndex =
+          validTargets[Math.floor(Math.random() * validTargets.length)];
+        const cell = document.querySelector(
+          `#playerBoard .cell[data-index="${targetIndex}"]`
+        );
+
+        setTimeout(() => {
+          if (gameState.playerBoard[targetIndex]) {
+            // HIT
+            cell.classList.add("hit");
+            playSound();
+
+            checkLoss();
+          } else {
+            // MISS
+            cell.classList.add("miss");
+          }
+
+          switchTurn();
+        }, 1000); // AI delay
+      }
+
+      // Switch turn
+      function switchTurn() {
+        gameState.currentTurn =
+          gameState.currentTurn === "player" ? "enemy" : "player";
+        updateTurnIndicator();
+        resetTimer();
+
+        if (gameState.currentTurn === "enemy") {
+          aiFire();
+        }
+      }
+
+      // Update turn indicator
+      function updateTurnIndicator() {
+        const indicator = document.getElementById("turnIndicator");
+        const playerContainer = document.getElementById("playerBoardContainer");
+        const enemyContainer = document.getElementById("enemyBoardContainer");
+
+        if (gameState.currentTurn === "player") {
+          indicator.textContent = "Your Turn";
+          indicator.className = "turn-indicator your";
+          playerContainer.classList.remove("active");
+          enemyContainer.classList.add("active");
+        } else {
+          indicator.textContent = "Enemy Turn";
+          indicator.className = "turn-indicator enemy";
+          playerContainer.classList.add("active");
+          enemyContainer.classList.remove("active");
+        }
+      }
+
+      // Timer
+      function startTimer() {
+        gameState.timerInterval = setInterval(() => {
+          gameState.timer--;
+          document.getElementById("timer").textContent = `${gameState.timer}s`;
+
+          if (gameState.timer <= 0) {
+            // Time's up - auto switch turn
+            if (gameState.currentTurn === "player") {
+              switchTurn();
+            }
+          }
+        }, 1000);
+      }
+
+      function resetTimer() {
+        clearInterval(gameState.timerInterval);
+        gameState.timer = 20;
+        document.getElementById("timer").textContent = "20s";
+        startTimer();
+      }
+
+      // Play sound
+      function playSound() {
+        const audio = document.getElementById("fireSound");
+        audio.currentTime = 0;
+        audio.play().catch((e) => console.log("Audio play failed:", e));
+      }
+
+      // Check win/loss
+      function checkWin() {
+        const allSunk = gameState.enemyShips.every(
+          (ship) => ship.hits === ship.positions.length
+        );
+
+        if (allSunk) {
+          gameState.gameOver = true;
+          clearInterval(gameState.timerInterval);
+          setTimeout(() => {
+            alert("YOU WIN");
+          }, 500);
+        }
+      }
+
+      function checkLoss() {
+        const playerHits = document.querySelectorAll(
+          "#playerBoard .cell.hit"
+        ).length;
+        const totalShipCells = gameState.playerShips.reduce(
+          (sum, ship) => sum + ship.positions.length,
+          0
+        );
+
+        if (playerHits >= totalShipCells) {
+          gameState.gameOver = true;
+          clearInterval(gameState.timerInterval);
+          setTimeout(() => {
+            alert("YOU LOSE");
+          }, 500);
+        }
+      }
+
+      // Load player data
+      function loadPlayerData() {
+        const session = localStorage.getItem("battleship-player-session");
+        if (session) {
+          const player = JSON.parse(session);
+          document.getElementById("player1Name").textContent =
+            player.name || "Player 1";
+        }
+
+        const opponent = localStorage.getItem("battleship-player-2");
+        if (opponent) {
+          const player2 = JSON.parse(opponent);
+          document.getElementById("player2Name").textContent =
+            player2.name || "AI";
+        }
+      }
+
+      // Initialize game
+      window.addEventListener("DOMContentLoaded", () => {
+        initBoards();
+        loadPlayerShips();
+        generateAIShips();
+        loadPlayerData();
+        updateTurnIndicator();
+        startTimer();
+      });
+    </script>
+  </body>
+</html>
