@@ -1,62 +1,82 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
-module Storage.Player
-  ( savePlayer
+module Storage.Player 
+  ( -- * Types
+    Player(..)
+  , PlayerStats(..)
+  , PlayerId
+    -- * Operations
+  , savePlayer
   , loadPlayer
-  , playerExists
-  , getPlayerFilePath
+  , updatePlayerStats
+  , createNewPlayer
   ) where
 
-import Control.Exception (catch, IOException)
-import Data.Aeson (decode, encode)
+import Data.Aeson
+import Data.Text (Text)
+import qualified Data.Text as T
 import qualified Data.ByteString.Lazy as BL
-import Data.Text (Text, unpack)
+import GHC.Generics
 import System.Directory (doesFileExist, createDirectoryIfMissing)
-import System.FilePath ((</>))
 
-import Player.Types (Player, PlayerId, playerId)
+-- ============ TYPES ============
 
--- | Base directory for player data
-playersDir :: FilePath
-playersDir = "data/players"
+type PlayerId = Text
 
--- | Get the file path for a player
-getPlayerFilePath :: PlayerId -> FilePath
-getPlayerFilePath pid = playersDir </> (unpack pid ++ ".json")
+data PlayerStats = PlayerStats
+  { gamesPlayed :: Int
+  , wins :: Int
+  , losses :: Int
+  } deriving (Show, Eq, Generic)
 
--- | Ensure the players directory exists
-ensurePlayersDir :: IO ()
-ensurePlayersDir = createDirectoryIfMissing True playersDir
+instance ToJSON PlayerStats
+instance FromJSON PlayerStats
 
--- | Save player data to file
-savePlayer :: Player -> IO (Either String ())
-savePlayer player = do
-  ensurePlayersDir
-  let filePath = getPlayerFilePath (playerId player)
-  catch
-    (do
-      BL.writeFile filePath (encode player)
-      return $ Right ()
-    )
-    (\(e :: IOException) -> return $ Left $ "Failed to save player: " ++ show e)
+data Player = Player
+  { name :: Text
+  , stats :: PlayerStats
+  } deriving (Show, Eq, Generic)
 
--- | Load player data from file
-loadPlayer :: PlayerId -> IO (Either String Player)
-loadPlayer pid = do
-  let filePath = getPlayerFilePath pid
-  exists <- doesFileExist filePath
-  if not exists
-    then return $ Left "Player not found"
-    else catch
-      (do
-        content <- BL.readFile filePath
-        case decode content of
-          Just player -> return $ Right player
-          Nothing -> return $ Left "Failed to parse player data"
-      )
-      (\(e :: IOException) -> return $ Left $ "Failed to load player: " ++ show e)
+instance ToJSON Player
+instance FromJSON Player
 
--- | Check if a player exists
-playerExists :: PlayerId -> IO Bool
-playerExists pid = doesFileExist (getPlayerFilePath pid)
+-- ============ OPERATIONS ============
+
+-- Create new player with zero stats
+createNewPlayer :: Text -> Player
+createNewPlayer nickname = Player
+  { name = nickname
+  , stats = PlayerStats 0 0 0
+  }
+
+-- Save player to data/players/<id>.json
+savePlayer :: PlayerId -> Player -> IO ()
+savePlayer playerId player = do
+  createDirectoryIfMissing True "data/players"
+  let filepath = "data/players/" <> T.unpack playerId <> ".json"
+  BL.writeFile filepath (encode player)
+
+-- Load player from data/players/<id>.json
+loadPlayer :: PlayerId -> IO (Maybe Player)
+loadPlayer playerId = do
+  let filepath = "data/players/" <> T.unpack playerId <> ".json"
+  exists <- doesFileExist filepath
+  if exists
+    then decode <$> BL.readFile filepath
+    else return Nothing
+
+-- Update player stats after a match
+-- won = True if player won, False if lost
+updatePlayerStats :: PlayerId -> Bool -> IO ()
+updatePlayerStats playerId won = do
+  maybePlayer <- loadPlayer playerId
+  case maybePlayer of
+    Just (Player playerName (PlayerStats played w l)) -> do
+      let newStats = PlayerStats
+            { gamesPlayed = played + 1
+            , wins = if won then w + 1 else w
+            , losses = if won then l else l + 1
+            }
+      savePlayer playerId (Player playerName newStats)
+    Nothing -> return ()  -- Player doesn't exist, do nothing
