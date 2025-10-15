@@ -26,16 +26,8 @@ data GameMode
   | OneVsOne -- Two players
   deriving (Show, Eq, Generic)
 
-instance ToJSON GameMode where
-  toJSON AI = String "AI"
-  toJSON OneVsOne = String "1vs1"
-
-instance FromJSON GameMode where
-  parseJSON = withText "GameMode" $ \t ->
-    case t of
-      "AI" -> return AI
-      "1vs1" -> return OneVsOne
-      _ -> fail "Invalid game mode"
+instance ToJSON GameMode
+instance FromJSON GameMode
 
 -- | Room status
 data RoomStatus
@@ -44,18 +36,8 @@ data RoomStatus
   | Done        -- Game finished
   deriving (Show, Eq, Generic)
 
-instance ToJSON RoomStatus where
-  toJSON Ready = String "ready"
-  toJSON InProgress = String "in_progress"
-  toJSON Done = String "done"
-
-instance FromJSON RoomStatus where
-  parseJSON = withText "RoomStatus" $ \t ->
-    case t of
-      "ready" -> return Ready
-      "in_progress" -> return InProgress
-      "done" -> return Done
-      _ -> fail "Invalid room status"
+instance ToJSON RoomStatus
+instance FromJSON RoomStatus
 
 -- | Player info in a room
 data PlayerInfo = PlayerInfo
@@ -64,18 +46,8 @@ data PlayerInfo = PlayerInfo
   , playerInfoReady :: !Bool
   } deriving (Show, Eq, Generic)
 
-instance ToJSON PlayerInfo where
-  toJSON p = object
-    [ "id" .= playerInfoId p
-    , "name" .= playerInfoName p
-    , "ready" .= playerInfoReady p
-    ]
-
-instance FromJSON PlayerInfo where
-  parseJSON = withObject "PlayerInfo" $ \v -> PlayerInfo
-    <$> v .: "id"
-    <$> v .: "name"
-    <$> v .: "ready"
+instance ToJSON PlayerInfo
+instance FromJSON PlayerInfo
 
 -- | Room data
 data Room = Room
@@ -86,26 +58,8 @@ data Room = Room
   , player2 :: !PlayerInfo
   } deriving (Show, Eq, Generic)
 
-instance ToJSON Room where
-  toJSON r = object
-    [ "roomId" .= roomId r
-    , "gameMode" .= gameMode r
-    , "status" .= status r
-    , "players" .= object
-        [ "player1" .= player1 r
-        , "player2" .= player2 r
-        ]
-    ]
-
-instance FromJSON Room where
-  parseJSON = withObject "Room" $ \v -> do
-    rid <- v .: "roomId"
-    gm <- v .: "gameMode"
-    st <- v .: "status"
-    players <- v .: "players"
-    p1 <- players .: "player1"
-    p2 <- players .: "player2"
-    return $ Room rid gm st p1 p2
+instance ToJSON Room
+instance FromJSON Room
 
 -- | Create a new room
 newRoom :: RoomId -> GameMode -> PlayerId -> PlayerName -> Room

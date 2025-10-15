@@ -36,7 +36,7 @@ instance FromJSON Coordinate
 -- | Cell state on the board
 data CellState
   = Empty
-  | Ship ShipType
+  | ShipCell ShipType
   | Hit ShipType
   | Miss
   deriving (Show, Eq, Generic)

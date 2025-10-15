@@ -37,19 +37,8 @@ data Player = Player
   , stats :: !PlayerStats
   } deriving (Show, Eq, Generic)
 
-instance ToJSON Player where
-  toJSON p = 
-    object 
-      [ "id" .= playerId p
-      , "name" .= playerName p
-      , "stats" .= stats p
-      ]
-
-instance FromJSON Player where
-  parseJSON = withObject "Player" $ \v -> Player
-    <$> v .: "id"
-    <$> v .: "name"
-    <$> v .: "stats"
+instance ToJSON Player
+instance FromJSON Player
 
 -- | Create a new player with default stats
 newPlayer :: PlayerId -> PlayerName -> Player

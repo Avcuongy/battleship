@@ -53,7 +53,7 @@ placeShip :: Board -> Ship -> Either String Board
 placeShip board ship =
   let pos = positions ship
   in if isValidPlacement board pos
-     then Right $ foldr (\p b -> Map.insert p (Ship (shipType ship)) b) board pos
+     then Right $ foldr (\p b -> Map.insert p (ShipCell (shipType ship)) b) board pos
      else Left "Invalid ship placement"
 
 -- | Shoot at a position on the board
@@ -63,7 +63,7 @@ shootAt pos board ships =
     Nothing -> (ShotMiss, board)
     Just Empty -> (ShotMiss, Map.insert pos Miss board)
     Just Miss -> (ShotMiss, board)
-    Just (Ship st) -> 
+    Just (ShipCell st) -> 
       let newBoard = Map.insert pos (Hit st) board
           isSunk = isShipSunk st newBoard ships
       in if isSunk

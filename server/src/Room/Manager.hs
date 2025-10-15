@@ -11,7 +11,7 @@ module Room.Manager
   , generateRoomId
   ) where
 
-import Control.Concurrent.STM (STM, TVar, newTVar, readTVar, writeTVar, modifyTVar')
+import Control.Concurrent.STM (STM, TVar, newTVar, readTVar, writeTVar, modifyTVar', atomically)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
@@ -19,7 +19,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import System.Random (randomRIO)
 
-import Room.Types (Room, RoomId, GameMode, newRoom)
+import Room.Types (Room, RoomId, GameMode, newRoom, roomId)
 import Player.Types (PlayerId, PlayerName)
 
 -- | Thread-safe map of rooms
@@ -27,7 +27,7 @@ type RoomMap = TVar (Map RoomId Room)
 
 -- | Create a new empty room map
 newRoomMap :: IO RoomMap
-newRoomMap = newTVar Map.empty
+newRoomMap = atomically $ newTVar Map.empty
 
 -- | Generate a random 6-character room ID
 generateRoomId :: IO RoomId
@@ -55,7 +55,7 @@ createRoom roomMap mode pid pname = do
 
 -- | Get a room by ID
 getRoom :: RoomMap -> RoomId -> IO (Maybe Room)
-getRoom roomMap rid = do
+getRoom roomMap rid = atomically $ do
   rooms <- readTVar roomMap
   return $ Map.lookup rid rooms
 
@@ -71,10 +71,6 @@ deleteRoom roomMap rid = atomically $ do
 
 -- | List all rooms
 listRooms :: RoomMap -> IO [Room]
-listRooms roomMap = do
+listRooms roomMap = atomically $ do
   rooms <- readTVar roomMap
   return $ Map.elems rooms
-
--- Helper to run STM actions
-atomically :: STM a -> IO a
-atomically = Control.Concurrent.STM.atomically

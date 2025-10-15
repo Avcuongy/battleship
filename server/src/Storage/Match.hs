@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Storage.Match
   ( MatchResult(..)
@@ -9,7 +10,7 @@ module Storage.Match
   ) where
 
 import Control.Exception (catch, IOException)
-import Data.Aeson (FromJSON, ToJSON, encode, decode, object, (.=), (.:), withObject)
+import Data.Aeson (FromJSON, ToJSON, encode, decode)
 import qualified Data.ByteString.Lazy as BL
 import Data.Text (Text, unpack)
 import GHC.Generics (Generic)
@@ -28,26 +29,8 @@ data MatchResult = MatchResult
   , loserId :: !PlayerId
   } deriving (Show, Eq, Generic)
 
-instance ToJSON MatchResult where
-  toJSON m = object
-    [ "roomId" .= matchRoomId m
-    , "gameMode" .= matchGameMode m
-    , "status" .= matchStatus m
-    , "state" .= object
-        [ "id_player_win" .= winnerId m
-        , "id_player_lose" .= loserId m
-        ]
-    ]
-
-instance FromJSON MatchResult where
-  parseJSON = withObject "MatchResult" $ \v -> do
-    rid <- v .: "roomId"
-    gm <- v .: "gameMode"
-    st <- v .: "status"
-    state <- v .: "state"
-    wId <- state .: "id_player_win"
-    lId <- state .: "id_player_lose"
-    return $ MatchResult rid gm st wId lId
+instance ToJSON MatchResult
+instance FromJSON MatchResult
 
 -- | Base directory for match data
 matchesDir :: FilePath
