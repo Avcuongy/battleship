@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loading</title>
+     <link rel="stylesheet" href="../../styles/ai/loading.css" />
+  </head>
+  <body>
+    <div class="game-container">
+      <div class="content-container">
+        <!-- Player 1 Info (1/4 - Left) -->
+        <div class="player-info-container">
+          <div class="player-name" id="player1Name">Loading...</div>
+          <div class="player-id" id="player1Id">ID: Loading...</div>
+        </div>
+
+        <!-- Center Section (2/4) -->
+        <div class="center-container">
+          <div class="room-id-display">ROOM ID: AI</div>
+          <button class="start-button" id="startButton" disabled>
+            BẮT ĐẦU
+          </button>
+        </div>
+
+        <!-- AI Info (1/4 - Right) -->
+        <div class="ai-info-container">
+          <div class="player-name">AI</div>
+          <div class="player-id">ID: AI</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Load utilities and page script -->
+    <script src="../../scripts/utils/api.js"></script>
+    <script src="../../scripts/utils/session.js"></script>
+    <script src="../../scripts/ai/loading.js"></script>
+  </body>
+</html>

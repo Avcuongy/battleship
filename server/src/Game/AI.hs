@@ -43,7 +43,7 @@ placeRandomShip (Right (board, ships)) shipType = do
             Right newBoard -> return $ Right (newBoard, ship : s)
             Left _ -> tryPlacement b s (attempts + 1)
 
--- | Get AI's next move (random position that hasn't been shot)
+-- | Get AI's next move
 getAIMove :: [Position] -> IO Position
 getAIMove shotPositions = do
   pos <- randomPosition
