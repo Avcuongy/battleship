@@ -6,7 +6,9 @@ cabal-version: 1.12
 
 name:           BattleShip
 version:        0.1.0.0
-description:    Multiplayer Battleship game with Haskell backend
+description:    Multiplayer Battleship game with Haskell backend.
+                Features concurrent WebSocket connections, STM synchronization,
+                and parallel AI calculations.
 homepage:       https://github.com/yourusername/battleship#readme
 bug-reports:    https://github.com/yourusername/battleship/issues
 author:         Your Name
@@ -47,7 +49,7 @@ library
       Paths_BattleShip
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
   build-depends:
       aeson >=2.0
     , async >=2.2
@@ -71,7 +73,7 @@ executable battleship-server
       Paths_BattleShip
   hs-source-dirs:
       app
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       BattleShip
     , aeson >=2.0
@@ -101,7 +103,7 @@ test-suite battleship-test
       Paths_BattleShip
   hs-source-dirs:
       test
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       BattleShip
     , QuickCheck >=2.14

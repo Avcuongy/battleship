@@ -1,7 +1,7 @@
 # Di chuyển vào thư mục server
 cd server
 
-# Clean build artifacts (nếu có)
+# Clean build artifacts
 stack clean
 
 # Generate .cabal file từ package.yaml
