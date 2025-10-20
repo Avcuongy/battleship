@@ -1,118 +1,72 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE OverloadedStrings #-}
 
-module Game.Types
-  ( Position
-  , Coordinate(..)
-  , CellState(..)
-  , ShipType(..)
-  , Ship(..)
-  , Board
-  , GameState(..)
-  , Turn(..)
-  , ShotResult(..)
-  , positionToIndex
-  , indexToPosition
-  , shipSize
-  ) where
+module Game.Types where
 
-import Data.Aeson (FromJSON, ToJSON)
-import Data.Map.Strict (Map)
-import GHC.Generics (Generic)
-import Player.Types (PlayerId)
+import GHC.Generics
+import Data.Aeson
 
--- | Position on the board (row, col) - 0-indexed
-type Position = (Int, Int)
+-- Coordinate trên board (0-9)
+data Position = Position 
+    { row :: Int 
+    , col :: Int 
+    } deriving (Show, Eq, Generic)
 
--- | Coordinate (A-J, 1-10)
-data Coordinate = Coordinate
-  { col :: !Char  -- A-J
-  , row :: !Int   -- 1-10
-  } deriving (Show, Eq, Generic)
+instance ToJSON Position
+instance FromJSON Position
 
-instance ToJSON Coordinate
-instance FromJSON Coordinate
+-- Hướng đặt tàu
+data Orientation = Horizontal | Vertical 
+    deriving (Show, Eq, Generic)
 
--- | Cell state on the board
-data CellState
-  = Empty
-  | ShipCell ShipType
-  | Hit ShipType
-  | Miss
-  deriving (Show, Eq, Generic)
+instance ToJSON Orientation
+instance FromJSON Orientation
 
-instance ToJSON CellState
-instance FromJSON CellState
-
--- | Ship types
-data ShipType
-  = Carrier    -- 5 cells
-  | Battleship -- 4 cells
-  | Cruiser    -- 3 cells
-  | Submarine  -- 3 cells
-  | Destroyer  -- 2 cells
-  deriving (Show, Eq, Ord, Generic)
+-- Ship types với độ dài
+data ShipType 
+    = Carrier      -- 5 cells
+    | Battleship   -- 4 cells
+    | Cruiser      -- 3 cells
+    | Submarine    -- 3 cells
+    | Destroyer    -- 2 cells
+    deriving (Show, Eq, Generic)
 
 instance ToJSON ShipType
 instance FromJSON ShipType
 
--- | Ship placement
+shipLength :: ShipType -> Int
+shipLength Carrier = 5
+shipLength Battleship = 4
+shipLength Cruiser = 3
+shipLength Submarine = 3
+shipLength Destroyer = 2
+
+-- Ship placement
 data Ship = Ship
-  { shipType :: !ShipType
-  , positions :: ![Position]
-  , isHorizontal :: !Bool
-  } deriving (Show, Eq, Generic)
+    { shipType :: ShipType
+    , startPos :: Position
+    , orientation :: Orientation
+    } deriving (Show, Eq, Generic)
 
 instance ToJSON Ship
 instance FromJSON Ship
 
--- | Game board (10x10 grid)
-type Board = Map Position CellState
+-- Cell state
+data CellState 
+    = Empty           -- Chưa bắn
+    | Miss            -- Bắn trượt
+    | Hit             -- Bắn trúng
+    | Sunk            -- Tàu chìm
+    deriving (Show, Eq, Generic)
 
--- | Whose turn it is
-data Turn = Player1Turn | Player2Turn
-  deriving (Show, Eq, Generic)
+instance ToJSON CellState
+instance FromJSON CellState
 
-instance ToJSON Turn
-instance FromJSON Turn
+-- Move result
+data MoveResult = MoveResult
+    { position :: Position
+    , result :: CellState
+    , sunkShip :: Maybe ShipType
+    } deriving (Show, Generic)
 
--- | Result of a shot
-data ShotResult
-  = ShotMiss
-  | ShotHit ShipType
-  | ShotSunk ShipType
-  deriving (Show, Eq, Generic)
-
-instance ToJSON ShotResult
-instance FromJSON ShotResult
-
--- | Game state
-data GameState = GameState
-  { player1Board :: !Board
-  , player2Board :: !Board
-  , player1Ships :: ![Ship]
-  , player2Ships :: ![Ship]
-  , player1Shots :: ![Position]
-  , player2Shots :: ![Position]
-  , currentTurn :: !Turn
-  , winner :: !(Maybe PlayerId)
-  } deriving (Show, Eq, Generic)
-
-instance ToJSON GameState
-instance FromJSON GameState
-
--- | Get ship size
-shipSize :: ShipType -> Int
-shipSize Carrier = 5
-shipSize Battleship = 4
-shipSize Cruiser = 3
-shipSize Submarine = 3
-shipSize Destroyer = 2
-
--- | Convert position to linear index
-positionToIndex :: Position -> Int
-positionToIndex (r, c) = r * 10 + c
-
--- | Convert linear index to position
-indexToPosition :: Int -> Position
-indexToPosition idx = (idx `div` 10, idx `mod` 10)
+instance ToJSON MoveResult
+instance FromJSON MoveResult
