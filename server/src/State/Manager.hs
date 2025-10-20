@@ -33,6 +33,7 @@ module State.Manager
     , getActiveRoomCount
     ) where
 
+import System.Random (randomRIO)
 import Control.Concurrent.STM
 import qualified Data.Map.Strict as M
 import Data.Text (Text)

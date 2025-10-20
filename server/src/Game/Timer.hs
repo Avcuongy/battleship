@@ -24,6 +24,7 @@ import Data.Aeson
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics
+import Control.Monad (when)
 
 -- ===== TYPES =====
 

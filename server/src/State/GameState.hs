@@ -35,6 +35,7 @@ import Data.Text (Text)
 import Data.Time.Clock (UTCTime, getCurrentTime)
 import Data.Aeson
 import GHC.Generics
+import System.Random (randomRIO) 
 
 -- ===== PLAYER STATE =====
 
