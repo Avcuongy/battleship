@@ -1,282 +1,116 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric #-}
 
-module State.Manager
-    ( -- * PvP State
-      PvPState(..)
-    , initPvPState
+{-|
+Types for application state managed by STM (Software Transactional Memory):
+  * RoomState: Game room information (1vs1)
+  * PlayerInfo: Player connection and metadata
+  * AIGameState: AI game session data
+-}
+
+module State.Types
+    ( -- * Room types
+      RoomState(..)
+    , GameStatus(..)
     
-    -- * Matchmaking
-    , joinQueue
-    , leaveQueue
-    , getQueueSize
+    -- * Player types
+    , PlayerInfo(..)
     
-    -- * Game Management
-    , createGame
-    , getGame
-    , updateGame
-    , removeGame
-    , getAllGames
+    -- * AI types
+    , AIGameState(..)
     
-    -- * Connection Management
-    , registerConnection
-    , unregisterConnection
-    , getConnection
-    , broadcastToRoom
-    
-    -- * Player Management
-    , setPlayerShips
-    , setPlayerReady
-    , processPlayerMove
-    
-    -- * Queries
-    , isRoomFull
-    , getActiveRoomCount
+    -- * Type aliases
+    , RoomId
+    , PlayerId
+    , GameId
     ) where
 
-import System.Random (randomRIO)
-import Control.Concurrent.STM
-import qualified Data.Map.Strict as M
 import Data.Text (Text)
-import qualified Data.Text as T
+import Data.Time.Clock (UTCTime)
+import GHC.Generics (Generic)
 import qualified Network.WebSockets as WS
 
-import State.GameState
-import Game.Types
-import Game.Board
-import Game.Engine (processAttack)
+import Game.Types (Board, Fleet)
 
--- ===== PVP STATE (STM) =====
+-- ============================================================================
+-- Type Aliases
+-- ============================================================================
 
--- | Global PvP state with STM synchronization
-data PvPState = PvPState
-    { waitingQueue :: !(TVar [Text])                       -- ^ Player IDs waiting for match
-    , activeGames  :: !(TVar (M.Map Text GameState))       -- ^ roomId -> GameState
-    , connections  :: !(TVar (M.Map Text WS.Connection))   -- ^ playerId -> WebSocket connection
-    }
+type RoomId = Text    -- 6 chars a-zA-Z (case-sensitive)
+type PlayerId = Text  -- 6 chars a-zA-Z
+type GameId = Text    -- AI session ID
 
--- | Initialize PvP state
-initPvPState :: IO PvPState
-initPvPState = do
-    queue <- newTVarIO []
-    games <- newTVarIO M.empty
-    conns <- newTVarIO M.empty
-    return $ PvPState queue games conns
+-- ============================================================================
+-- Game Status
+-- ============================================================================
 
--- ===== MATCHMAKING (STM) =====
+-- | Room/Game status
+data GameStatus
+    = Ready       -- Waiting for players to place ships
+    | InProgress  -- Game is active
+    | Done        -- Game finished
+    deriving (Show, Eq, Generic)
 
--- | Join matchmaking queue
--- Returns: Left "waiting" if no opponent found, Right roomId if matched
-joinQueue :: PvPState -> Text -> Text -> IO (Either Text Text)
-joinQueue state playerId playerName = do
-    result <- atomically $ do
-        queue <- readTVar (waitingQueue state)
-        case queue of
-            [] -> do
-                -- No one waiting, add to queue
-                writeTVar (waitingQueue state) [playerId]
-                return $ Left "Waiting for opponent"
-            (opponentId:rest) -> do
-                -- Found opponent, remove from queue
-                writeTVar (waitingQueue state) rest
-                return $ Right opponentId
+-- ============================================================================
+-- Room State (1vs1)
+-- ============================================================================
+
+-- | Room state for 1vs1 games
+data RoomState = RoomState
+    { roomId :: !RoomId
+    , gameMode :: !Text                  -- Always "1vs1"
+    , status :: !GameStatus
     
-    case result of
-        Left msg -> return $ Left msg
-        Right opponentId -> do
-            -- Create game room
-            roomId <- generateRoomId
-            gameState <- initGameState roomId playerId playerName opponentId "Opponent" 30
-            
-            -- Add to active games atomically
-            atomically $ modifyTVar (activeGames state) $ 
-                M.insert roomId gameState
-            
-            return $ Right roomId
-
--- | Leave matchmaking queue
-leaveQueue :: PvPState -> Text -> STM ()
-leaveQueue state playerId = do
-    modifyTVar (waitingQueue state) $ filter (/= playerId)
-
--- | Get current queue size
-getQueueSize :: PvPState -> STM Int
-getQueueSize state = do
-    queue <- readTVar (waitingQueue state)
-    return $ length queue
-
--- ===== GAME MANAGEMENT (STM) =====
-
--- | Create new game room
-createGame :: PvPState -> Text -> GameState -> STM ()
-createGame state roomId gameState = do
-    modifyTVar (activeGames state) $ M.insert roomId gameState
-
--- | Get game by room ID
-getGame :: PvPState -> Text -> STM (Maybe GameState)
-getGame state roomId = do
-    games <- readTVar (activeGames state)
-    return $ M.lookup roomId games
-
--- | Update game state atomically
-updateGame :: PvPState -> Text -> (GameState -> GameState) -> STM ()
-updateGame state roomId updateFn = do
-    modifyTVar (activeGames state) $ M.adjust updateFn roomId
-
--- | Remove game room
-removeGame :: PvPState -> Text -> STM ()
-removeGame state roomId = do
-    modifyTVar (activeGames state) $ M.delete roomId
-
--- | Get all active games
-getAllGames :: PvPState -> STM (M.Map Text GameState)
-getAllGames state = readTVar (activeGames state)
-
--- ===== CONNECTION MANAGEMENT (STM) =====
-
--- | Register WebSocket connection for player
-registerConnection :: PvPState -> Text -> WS.Connection -> STM ()
-registerConnection state playerId conn = do
-    modifyTVar (connections state) $ M.insert playerId conn
-
--- | Unregister connection
-unregisterConnection :: PvPState -> Text -> STM ()
-unregisterConnection state playerId = do
-    modifyTVar (connections state) $ M.delete playerId
-
--- | Get connection for player
-getConnection :: PvPState -> Text -> STM (Maybe WS.Connection)
-getConnection state playerId = do
-    conns <- readTVar (connections state)
-    return $ M.lookup playerId conns
-
--- | Broadcast message to all players in a room
-broadcastToRoom :: PvPState -> Text -> Text -> IO ()
-broadcastToRoom state roomId message = do
-    (mGame, conns) <- atomically $ do
-        games <- readTVar (activeGames state)
-        cs <- readTVar (connections state)
-        return (M.lookup roomId games, cs)
+    -- Player 1
+    , player1Id :: !PlayerId
+    , player1Name :: !Text
+    , player1Ready :: !Bool
+    , player1Fleet :: !(Maybe Fleet)
+    , player1Board :: !(Maybe Board)
     
-    case mGame of
-        Just game -> do
-            let p1Id = playerId (player1 game)
-            let p2Id = playerId (player2 game)
-            
-            -- Send to both players
-            mapM_ (sendToPlayer conns message) [p1Id, p2Id]
-        Nothing -> return ()
-  where
-    sendToPlayer conns msg pid =
-        case M.lookup pid conns of
-            Just conn -> WS.sendTextData conn msg
-            Nothing -> return ()
-
--- ===== PLAYER MANAGEMENT (STM) =====
-
--- | Set player ships (setup phase)
-setPlayerShips :: PvPState -> Text -> Text -> [Ship] -> STM (Either Text ())
-setPlayerShips state roomId playerId ships = do
-    mGame <- getGame state roomId
-    case mGame of
-        Nothing -> return $ Left "Room not found"
-        Just game -> do
-            let p1 = player1 game
-            let p2 = player2 game
-            
-            if playerId == State.GameState.playerId p1
-                then do
-                    let newP1 = p1 
-                            { State.GameState.ships = ships
-                            , State.GameState.board = initBoardWithShips ships
-                            }
-                    updateGame state roomId $ \g -> g { player1 = newP1 }
-                    return $ Right ()
-                else if playerId == State.GameState.playerId p2
-                    then do
-                        let newP2 = p2 
-                                { State.GameState.ships = ships
-                                , State.GameState.board = initBoardWithShips ships
-                                }
-                        updateGame state roomId $ \g -> g { player2 = newP2 }
-                        return $ Right ()
-                    else return $ Left "Player not in room"
-
--- | Set player ready status
-setPlayerReady :: PvPState -> Text -> Text -> Bool -> STM ()
-setPlayerReady state roomId playerId ready = do
-    updateGame state roomId $ \game ->
-        let p1 = player1 game
-            p2 = player2 game
-        in if playerId == State.GameState.playerId p1
-            then game { player1 = setPlayerReady p1 ready }
-            else if playerId == State.GameState.playerId p2
-                then game { player2 = setPlayerReady p2 ready }
-                else game
-
--- | Process player move atomically
-processPlayerMove :: PvPState -> Text -> Text -> Position -> STM (Either Text MoveResult)
-processPlayerMove state roomId playerId pos = do
-    mGame <- getGame state roomId
-    case mGame of
-        Nothing -> return $ Left "Room not found"
-        Just game -> do
-            -- Check if it's player's turn
-            if not (isPlayerTurn game playerId)
-                then return $ Left "Not your turn"
-                else do
-                    -- Determine attacker and defender
-                    let (attacker, defender) = 
-                            if playerId == State.GameState.playerId (player1 game)
-                                then (player1 game, player2 game)
-                                else (player2 game, player1 game)
-                    
-                    -- Process attack
-                    let (newDefenderState, result) = processAttack 
-                            (toPlayerState defender) pos
-                    
-                    -- Update game state
-                    let newDefender = updatePlayerFromState defender newDefenderState
-                    let updatedGame = if playerId == State.GameState.playerId (player1 game)
-                            then game { player2 = newDefender }
-                            else game { player1 = newDefender }
-                    
-                    updateGame state roomId (const $ updateGameState updatedGame playerId pos result)
-                    return $ Right result
-  where
-    toPlayerState p = Game.Engine.PlayerState
-        { Game.Engine.playerShips = State.GameState.ships p
-        , Game.Engine.playerBoard = State.GameState.board p
-        , Game.Engine.opponentTrackBoard = State.GameState.attackBoard p
-        , Game.Engine.totalMoves = State.GameState.totalMoves p
-        , Game.Engine.shipsRemaining = State.GameState.shipsLeft p
-        }
+    -- Player 2
+    , player2Id :: !(Maybe PlayerId)
+    , player2Name :: !(Maybe Text)
+    , player2Ready :: !Bool
+    , player2Fleet :: !(Maybe Fleet)
+    , player2Board :: !(Maybe Board)
     
-    updatePlayerFromState p newState = p
-        { State.GameState.board = Game.Engine.playerBoard newState
-        , State.GameState.shipsLeft = Game.Engine.shipsRemaining newState
-        }
+    -- Game state
+    , currentTurn :: !(Maybe PlayerId)   -- Whose turn is it?
+    , turnStartTime :: !(Maybe UTCTime)  -- When did current turn start?
+    , createdAt :: !UTCTime
+    } deriving (Show, Generic)
 
--- ===== QUERIES =====
+-- ============================================================================
+-- Player Info
+-- ============================================================================
 
--- | Check if room is full (2 players)
-isRoomFull :: GameState -> Bool
-isRoomFull game =
-    not (T.null $ State.GameState.playerId $ player2 game)
+-- | Player information (connection + metadata)
+data PlayerInfo = PlayerInfo
+    { playerId :: !PlayerId
+    , playerName :: !Text
+    , currentRoomId :: !(Maybe RoomId)
+    , playerConnection :: !(Maybe WS.Connection)
+    } deriving (Generic)
 
--- | Get number of active rooms
-getActiveRoomCount :: PvPState -> STM Int
-getActiveRoomCount state = do
-    games <- readTVar (activeGames state)
-    return $ M.size games
+-- Note: Can't derive Show for WS.Connection
+instance Show PlayerInfo where
+    show pi = "PlayerInfo {playerId=" ++ show (playerId pi)
+           ++ ", playerName=" ++ show (playerName pi)
+           ++ ", currentRoomId=" ++ show (currentRoomId pi)
+           ++ ", connected=" ++ show (maybe False (const True) (playerConnection pi))
+           ++ "}"
 
--- ===== HELPERS =====
+-- ============================================================================
+-- AI Game State
+-- ============================================================================
 
--- | Generate random room ID (6 characters)
-generateRoomId :: IO Text
-generateRoomId = do
-    -- Simple implementation - in production use crypto-random
-    let chars = ['a'..'z'] ++ ['A'..'Z']
-    randomChars <- sequence $ replicate 6 $ do
-        idx <- randomRIO (0, length chars - 1)
-        return $ chars !! idx
-    return $ T.pack randomChars
+-- | AI game session state
+data AIGameState = AIGameState
+    { aiGameId :: !GameId
+    , aiPlayerId :: !PlayerId
+    , aiPlayerName :: !Text
+    , aiPlayerBoard :: !Board      -- Player's board
+    , aiOpponentBoard :: !Board    -- AI's board (fixed fleet)
+    , aiCurrentTurn :: !Text       -- "player" | "ai"
+    , aiCreatedAt :: !UTCTime
+    } deriving (Show, Generic)

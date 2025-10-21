@@ -1,163 +1,125 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module State.AIState
-    ( -- * AI Game State
-      AIGameState(..)
-    , AIGamePhase(..)
-    , PlayerTurn(..)
+{-|
+Manages AI game sessions (in-memory only, no file save).
+Limitation: Only 1 active AI session at a time.
+-}
+
+module State.Manager.AI
+    ( -- * Types
+      AIManager
     
     -- * Initialization
-    , initAIGameState
+    , newAIManager
+    , generateUniqueGameId
     
-    -- * Updates
-    , updateAIGameState
-    , setAIGamePhase
-    , switchAITurn
+    -- * Session operations
+    , createAISession
+    , getAISession
+    , updateAISession
+    , deleteAISession
     
-    -- * Storage
-    , aiGamesRef
-    , getAIGame
-    , addAIGame
-    , removeAIGame
-    , updateAIGame
+    -- * Board accessors
+    , playerBoard
+    , aiBoard
     ) where
 
-import Game.Types
-import Game.Board
-import Game.AI (AIState, initAIState)
-import qualified Game.AI as AI
+import Control.Concurrent.STM (TVar, newTVarIO, atomically, readTVar, writeTVar)
 import Data.Text (Text)
-import Data.IORef
-import qualified Data.Map.Strict as M
-import Data.Aeson
-import GHC.Generics
-import System.IO.Unsafe (unsafePerformIO)
+import qualified Data.Map.Strict as Map
+import Data.Map.Strict (Map)
+import Data.Time.Clock (getCurrentTime)
 
--- ===== TYPES =====
+import State.Types
+import State.Sync
+import Game.Types (Board, Fleet)
+import qualified Game.Board as Board
+import qualified Game.AI as AI
+import qualified Utils.Random as Random
 
--- | AI game phase
-data AIGamePhase
-    = AISetup       -- ^ Player setting up ships
-    | AIInProgress  -- ^ Game in progress
-    | AIGameOver !Text  -- ^ Game finished (winner: "player" or "ai")
-    deriving (Show, Eq, Generic)
+-- ============================================================================
+-- Types
+-- ============================================================================
 
-instance ToJSON AIGamePhase where
-    toJSON AISetup = String "setup"
-    toJSON AIInProgress = String "in_progress"
-    toJSON (AIGameOver winner) = object
-        [ "phase"  .= ("game_over" :: Text)
-        , "winner" .= winner
-        ]
-
--- | Turn in AI game
-data PlayerTurn
-    = HumanTurn  -- ^ Player's turn
-    | AITurn     -- ^ AI's turn
-    deriving (Show, Eq, Generic)
-
-instance ToJSON PlayerTurn where
-    toJSON HumanTurn = String "human"
-    toJSON AITurn    = String "ai"
-
--- | Complete AI game state
-data AIGameState = AIGameState
-    { gameId          :: !Text          -- ^ Unique game ID
-    , playerId        :: !Text          -- ^ Player ID
-    , playerName      :: !Text          -- ^ Player name
-    , playerShips     :: ![Ship]        -- ^ Player's ships
-    , playerBoard     :: !Board         -- ^ Player's board (receives AI attacks)
-    , playerAttackBoard :: !Board       -- ^ Track player attacks on AI
-    , aiShips         :: ![Ship]        -- ^ AI's ships
-    , aiBoard         :: !Board         -- ^ AI's board (receives player attacks)
-    , aiState         :: !AIState       -- ^ AI decision state
-    , currentTurn     :: !PlayerTurn    -- ^ Whose turn
-    , gamePhase       :: !AIGamePhase   -- ^ Current phase
-    , playerShipsLeft :: ![ShipType]    -- ^ Player ships not sunk
-    , aiShipsLeft     :: ![ShipType]    -- ^ AI ships not sunk
-    , moveHistory     :: ![(Text, Position, MoveResult)]  -- ^ Move history
-    } deriving (Show, Generic)
-
-instance ToJSON AIGameState where
-    toJSON (AIGameState gid pid pname _ _ _ _ _ _ turn phase pShipsLeft aiShipsLeft _) = object
-        [ "gameId"          .= gid
-        , "playerId"        .= pid
-        , "playerName"      .= pname
-        , "currentTurn"     .= turn
-        , "gamePhase"       .= phase
-        , "playerShipsLeft" .= pShipsLeft
-        , "aiShipsLeft"     .= aiShipsLeft
-        ]
-
--- ===== INITIALIZATION =====
-
--- | Initialize AI game state
-initAIGameState :: Text -> Text -> Text -> [Ship] -> [Ship] -> AIGameState
-initAIGameState gid pid pname playerShips aiShips = AIGameState
-    { gameId = gid
-    , playerId = pid
-    , playerName = pname
-    , playerShips = playerShips
-    , playerBoard = initBoardWithShips playerShips
-    , playerAttackBoard = emptyBoard
-    , aiShips = aiShips
-    , aiBoard = initBoardWithShips aiShips
-    , aiState = initAIState
-    , currentTurn = HumanTurn
-    , gamePhase = AISetup
-    , playerShipsLeft = allShipTypes
-    , aiShipsLeft = allShipTypes
-    , moveHistory = []
+-- | AI session manager
+newtype AIManager = AIManager
+    { aiSessionsVar :: TVar (Map GameId AIGameState)
     }
 
--- ===== UPDATES =====
+-- ============================================================================
+-- Initialization
+-- ============================================================================
 
--- | Update AI game state after a move
-updateAIGameState :: AIGameState -> Text -> Position -> MoveResult -> AIGameState
-updateAIGameState state actor pos result =
-    let newHistory = (actor, pos, result) : moveHistory state
-    in state { moveHistory = newHistory }
+-- | Create new AI manager
+newAIManager :: IO AIManager
+newAIManager = do
+    var <- newTVarIO Map.empty
+    return $ AIManager var
 
--- | Set game phase
-setAIGamePhase :: AIGameState -> AIGamePhase -> AIGameState
-setAIGamePhase state phase = state { gamePhase = phase }
+-- | Generate unique game ID
+generateUniqueGameId :: IO GameId
+generateUniqueGameId = Random.randomId 8
 
--- | Switch turn
-switchAITurn :: AIGameState -> AIGameState
-switchAITurn state =
-    let newTurn = case currentTurn state of
-            HumanTurn -> AITurn
-            AITurn    -> HumanTurn
-    in state { currentTurn = newTurn }
+-- ============================================================================
+-- Session Operations
+-- ============================================================================
 
--- ===== GLOBAL STORAGE (IORef) =====
+-- | Create new AI session (only if no active sessions)
+createAISession :: AIManager -> GameId -> PlayerId -> Text -> Fleet -> IO (Either Text ())
+createAISession mgr gameId playerId playerName playerFleet = do
+    now <- getCurrentTime
+    
+    atomically $ do
+        sessions <- readTVar (aiSessionsVar mgr)
+        
+        -- Check limit: only 1 active session
+        if not (Map.null sessions)
+            then return $ Left "Another AI session is active"
+            else do
+                let newSession = AIGameState
+                        { aiGameId = gameId
+                        , aiPlayerId = playerId
+                        , aiPlayerName = playerName
+                        , aiPlayerBoard = Board.createBoard playerFleet
+                        , aiOpponentBoard = Board.createBoard AI.aiDefaultFleet
+                        , aiCurrentTurn = "player"
+                        , aiCreatedAt = now
+                        }
+                
+                writeTVar (aiSessionsVar mgr) (Map.insert gameId newSession sessions)
+                return $ Right ()
 
--- | Global storage for AI games (no STM needed - single player)
-{-# NOINLINE aiGamesRef #-}
-aiGamesRef :: IORef (M.Map Text AIGameState)
-aiGamesRef = unsafePerformIO $ newIORef M.empty
+-- | Get AI session
+getAISession :: AIManager -> GameId -> IO (Maybe AIGameState)
+getAISession mgr gameId = atomicLookup gameId (aiSessionsVar mgr)
 
--- | Get AI game by ID
-getAIGame :: Text -> IO (Maybe AIGameState)
-getAIGame gid = do
-    games <- readIORef aiGamesRef
-    return $ M.lookup gid games
+-- | Update AI session boards
+updateAISession :: AIManager -> GameId -> Board -> Board -> IO ()
+updateAISession mgr gameId newPlayerBoard newAIBoard = do
+    atomically $ do
+        sessions <- readTVar (aiSessionsVar mgr)
+        case Map.lookup gameId sessions of
+            Nothing -> return ()
+            Just session -> do
+                let updated = session
+                        { aiPlayerBoard = newPlayerBoard
+                        , aiOpponentBoard = newAIBoard
+                        }
+                writeTVar (aiSessionsVar mgr) (Map.insert gameId updated sessions)
 
--- | Add new AI game
-addAIGame :: Text -> AIGameState -> IO ()
-addAIGame gid state = do
-    atomicModifyIORef' aiGamesRef $ \games ->
-        (M.insert gid state games, ())
+-- | Delete AI session (game over)
+deleteAISession :: AIManager -> GameId -> IO ()
+deleteAISession mgr gameId = do
+    atomicModify (aiSessionsVar mgr) (Map.delete gameId)
 
--- | Remove AI game
-removeAIGame :: Text -> IO ()
-removeAIGame gid = do
-    atomicModifyIORef' aiGamesRef $ \games ->
-        (M.delete gid games, ())
+-- ============================================================================
+-- Board Accessors
+-- ============================================================================
 
--- | Update AI game state
-updateAIGame :: Text -> (AIGameState -> AIGameState) -> IO ()
-updateAIGame gid updateFn = do
-    atomicModifyIORef' aiGamesRef $ \games ->
-        (M.adjust updateFn gid games, ())
+-- | Get player board from session
+playerBoard :: AIGameState -> Board
+playerBoard = aiPlayerBoard
+
+-- | Get AI board from session
+aiBoard :: AIGameState -> Board
+aiBoard = aiOpponentBoard
