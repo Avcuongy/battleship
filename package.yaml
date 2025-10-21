@@ -8,90 +8,60 @@ copyright: "2025 Your Name"
 
 # Only include files that ACTUALLY EXIST
 extra-source-files:
-- README.md
-- CHANGELOG.md
+  - README.md
+  - CHANGELOG.md
 
 description: |
   Multiplayer Battleship game with Haskell backend.
-  Features concurrent WebSocket connections, STM synchronization,
-  and parallel AI calculations.
 
 dependencies:
-# Base
-- base >= 4.7 && < 5
+  base: ">= 4.7 && < 5"
+  scotty: "*"
+  wai-middleware-static: "*"
+  aeson: "*"
+  text: "*"
+  http-types: "*"
+  stm: "*"
+  "parallel": ">= 3.2.2.0"
 
-# Data structures
-- containers >= 0.6
-- text >= 1.2
-- bytestring >= 0.10
-
-# Concurrency & STM
-- stm >= 2.5
-- async >= 2.2
-
-# Parallelism
-- parallel >= 3.2
-- deepseq >= 1.4
-
-# Random
-- random >= 1.2
-
-# Time
-- time >= 1.9
-
-# JSON
-- aeson >= 2.0
-
-# WebSocket
-- websockets >= 0.12
-
-# File system
-- directory >= 1.3
-- filepath >= 1.4
 
 ghc-options:
-- -Wall
-- -Wcompat
-- -Widentities
-- -Wincomplete-record-updates
-- -Wincomplete-uni-patterns
-- -Wpartial-fields
-- -Wredundant-constraints
+  - -Wall
+  - -Wcompat
+  - -Widentities
+  - -Wincomplete-record-updates
+  - -Wincomplete-uni-patterns
+  - -Wpartial-fields
+  - -Wredundant-constraints
 
 library:
   source-dirs: src
   exposed-modules:
-  - Game.Types
-  - Game.Board
-  - Game.Ship
-  - Game.Engine
-  - Game.Timer
-  - Game.AI
-  - State.GameState
-  - State.AIState
-  - State.Manager
+    - Game.Types
+
+
 
 executables:
   battleship-server:
     main: Main.hs
     source-dirs: app
     ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
     dependencies:
-    - BattleShip
+      - BattleShip
 
 tests:
   battleship-test:
     main: Spec.hs
     source-dirs: test
     ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
     dependencies:
-    - BattleShip
-    - hspec >= 2.10
-    - QuickCheck >= 2.14
-    - hspec-discover >= 2.10
+      - BattleShip
+      - hspec >= 2.10
+      - QuickCheck >= 2.14
+      - hspec-discover >= 2.10
