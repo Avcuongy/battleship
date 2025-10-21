@@ -1,11 +1,12 @@
-{-# LANGUAGE OverloadedStrings #-}
-
-module Main where
-
-import System.IO
-
 main :: IO ()
 main = do
-    putStrLn "BattleShip Server"
-    putStrLn "Server not yet implemented - tests available"
-    putStrLn "Run: stack test"
+    -- Initialize STM state
+    roomMgr <- RoomMgr.newRoomManager
+    playerMgr <- PlayerMgr.newPlayerManager
+    aiMgr <- AIMgr.newAIManager
+    
+    -- Start WebSocket server (thread 1)
+    forkIO $ WSServer.startWebSocketServer state
+    
+    -- Start Scotty HTTP server (main thread)
+    scotty 3000 $ Routes.setupRoutes

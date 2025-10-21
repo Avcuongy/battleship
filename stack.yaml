@@ -1,19 +1,20 @@
-# Stack version
-resolver: lts-22.28  # GHC 9.6.6
+resolver: lts-22.9  # GHC 9.6.4
 
-# Packages
 packages:
 - .
 
-# Extra dependencies (if needed)
 extra-deps: []
 
-# Build flags
+system-ghc: false
+allow-newer: false
+
 flags: {}
 
-# GHC options
-ghc-options:
-  "$everything": -O0 -j4  # Fast build, use 4 cores
+extra-package-dbs: []
 
-# Allow newer versions
-allow-newer: true
+ghc-options:
+  "$everything": -O2 -Wall
+
+build:
+  haddock: false
+  keep-going: true

@@ -1,67 +1,103 @@
-name: BattleShip
-version: 0.1.0.0
-github: "yourusername/battleship"
-license: MIT
-author: "Your Name"
-maintainer: "your.email@example.com"
-copyright: "2025 Your Name"
+name:                BattleShip
+version:             0.1.0.0
+github:              "yourusername/BattleShip"
+license:             MIT
+author:              "Your Name"
+maintainer:          "your.email@example.com"
+copyright:           "2025 Your Name"
 
-# Only include files that ACTUALLY EXIST
 extra-source-files:
-  - README.md
-  - CHANGELOG.md
+- README.md
 
-description: |
-  Multiplayer Battleship game with Haskell backend.
+synopsis:            Multiplayer Battleship game with Haskell backend
+category:            Game
+description:         Please see the README on GitHub
 
 dependencies:
   base: ">= 4.7 && < 5"
-  scotty: "*"
-  wai-middleware-static: "*"
-  aeson: "*"
-  text: "*"
-  http-types: "*"
-  stm: "*"
-  "parallel": ">= 3.2.2.0"
+  text: ">= 1.2"
+  bytestring: ">= 0.10"
+  containers: ">= 0.6"
+  scotty: ">= 0.12"
+  wai: ">= 3.2"
+  wai-middleware-static: ">= 0.9"
+  warp: ">= 3.3"
+  http-types: ">= 0.12"
+  websockets: ">= 0.12"
+  wai-websockets: ">= 3.0"
+  stm: ">= 2.5"
+  parallel: ">= 3.2.2.0"
+  async: ">= 2.2"
+  deepseq: ">= 1.4"
+  aeson: ">= 2.0"
+  aeson-pretty: ">= 0.8"
+  time: ">= 1.9"
+  random: ">= 1.2"
+  directory: ">= 1.3"
+  filepath: ">= 1.4"
 
 
 ghc-options:
-  - -Wall
-  - -Wcompat
-  - -Widentities
-  - -Wincomplete-record-updates
-  - -Wincomplete-uni-patterns
-  - -Wpartial-fields
-  - -Wredundant-constraints
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+- -threaded
+- -rtsopts
+- -with-rtsopts=-N
 
 library:
   source-dirs: src
   exposed-modules:
-    - Game.Types
-
-
+  - API.Routes
+  - API.Handlers
+  - API.Types
+  - Concurrent.Parallel
+  - Game.Types
+  - Game.Ship
+  - Game.Board
+  - Game.AI
+  - Game.Rules
+  - Game.Timer
+  - Network.Protocol
+  - Network.WebSocket.Server
+  - Network.WebSocket.Handler
+  - Network.WebSocket.Broadcast
+  - State.Types
+  - State.Sync
+  - State.Manager.Room
+  - State.Manager.Player
+  - State.Manager.AI
+  - Storage.FileIO
+  - Storage.Player
+  - Storage.Room
+  - Utils.JSON
+  - Utils.Random
+  - Utils.Time
 
 executables:
-  battleship-server:
-    main: Main.hs
-    source-dirs: app
+  BattleShip-exe:
+    main:                Main.hs
+    source-dirs:         app
     ghc-options:
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
     dependencies:
-      - BattleShip
+    - BattleShip
 
 tests:
-  battleship-test:
-    main: Spec.hs
-    source-dirs: test
+  BattleShip-test:
+    main:                Spec.hs
+    source-dirs:         test
     ghc-options:
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
     dependencies:
-      - BattleShip
-      - hspec >= 2.10
-      - QuickCheck >= 2.14
-      - hspec-discover >= 2.10
+    - BattleShip
+    - hspec >= 2.7
