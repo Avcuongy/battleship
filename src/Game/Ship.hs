@@ -1,93 +1,97 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Game.Ship
-    ( -- * Validation
-      validateSetup
-    , isValidPlacement
-    , checkOverlap
-    , validateSingleShip
+    ( -- * Ship creation
+      makeShip
+    , makeFleet
     
-    -- * Helpers
-    , hasAllShipTypes
-    , validateShipBounds
-    , getShipEndPosition
+    -- * Ship queries
+    , getShipPositions
+    , isSunk
     , canPlaceShip
+    
+    -- * Ship operations
+    , hitShip
     ) where
 
 import Game.Types
-import Game.Board
-import Data.List (sort, nub)
-import qualified Data.Set as S
 
--- ===== VALIDATION =====
+-- ============================================================================
+-- Ship Creation
+-- ============================================================================
 
--- | Validate complete ship setup (all 5 ships)
--- Rules:
---   1. Must have exactly 5 ships
---   2. Must include all ship types (Carrier, Battleship, Cruiser, Submarine, Destroyer)
---   3. All ships must be within board bounds
---   4. Ships cannot overlap
-validateSetup :: [Ship] -> Either String [Ship]
-validateSetup ships
-    | length ships /= 5 = 
-        Left "Must have exactly 5 ships"
-    | not (hasAllShipTypes ships) = 
-        Left "Missing required ship types (Carrier, Battleship, Cruiser, Submarine, Destroyer)"
-    | not (all (validateShipBounds . shipPositions) ships) = 
-        Left "Ship placement out of bounds"
-    | checkOverlap ships = 
-        Left "Ships cannot overlap"
-    | otherwise = 
-        Right ships
+-- | Create a ship with no hits
+makeShip :: ShipType -> Position -> Orientation -> Ship
+makeShip sType pos orient = Ship
+    { shipType = sType
+    , shipPosition = pos
+    , shipOrientation = orient
+    , shipHits = replicate (shipLength sType) False  -- No hits initially
+    }
 
--- | Validate a single ship before adding to existing ships
-validateSingleShip :: [Ship] -> Ship -> Either String Ship
-validateSingleShip existingShips newShip
-    | not (validateShipBounds (shipPositions newShip)) =
-        Left "Ship placement out of bounds"
-    | not (isValidPlacement existingShips newShip) =
-        Left "Ship overlaps with existing ship"
-    | otherwise =
-        Right newShip
+-- | Create a complete fleet (helper for testing/AI)
+makeFleet :: [(ShipType, Position, Orientation)] -> Fleet
+makeFleet = map (\(t, p, o) -> makeShip t p o)
 
--- | Check if all required ship types are present
-hasAllShipTypes :: [Ship] -> Bool
-hasAllShipTypes ships =
-    let shipTypes = sort $ map shipType ships
-        expectedTypes = sort allShipTypes
-    in shipTypes == expectedTypes
+-- ============================================================================
+-- Ship Queries
+-- ============================================================================
 
--- | Validate all positions are within board (0-9 for both row and col)
-validateShipBounds :: [Position] -> Bool
-validateShipBounds = all isValidPosition
+-- | Get all positions occupied by a ship
+getShipPositions :: Ship -> [Position]
+getShipPositions ship =
+    let start = shipPosition ship
+        len = shipLength (shipType ship)
+        orient = shipOrientation ship
+    in case orient of
+        Horizontal -> 
+            [Position (posRow start) (posCol start + i) | i <- [0..len-1]]
+        Vertical -> 
+            [Position (posRow start + i) (posCol start) | i <- [0..len-1]]
 
--- | Check if ships overlap (any shared positions)
-checkOverlap :: [Ship] -> Bool
-checkOverlap ships =
-    let allPositions = concatMap shipPositions ships
-        uniquePositions = S.fromList allPositions
-    in length allPositions /= S.size uniquePositions
+-- | Check if ship is completely sunk
+isSunk :: Ship -> Bool
+isSunk ship = all id (shipHits ship)  -- All segments hit
 
--- | Check if a new ship placement is valid (no overlap with existing)
-isValidPlacement :: [Ship] -> Ship -> Bool
-isValidPlacement existingShips newShip =
-    let newPositions = S.fromList $ shipPositions newShip
-        existingPositions = S.fromList $ concatMap shipPositions existingShips
-        allValid = validateShipBounds (shipPositions newShip)
-        noOverlap = S.null $ S.intersection newPositions existingPositions
-    in allValid && noOverlap
+-- | Check if ship can be placed at position (within bounds)
+canPlaceShip :: Ship -> Bool
+canPlaceShip ship =
+    let positions = getShipPositions ship
+    in all isValidPosition positions
+  where
+    isValidPosition (Position r c) = 
+        r >= 0 && r < 10 && c >= 0 && c < 10
 
--- ===== HELPERS =====
+-- ============================================================================
+-- Ship Operations
+-- ============================================================================
 
--- | Get end position of a ship
-getShipEndPosition :: Ship -> Position
-getShipEndPosition ship =
-    last $ shipPositions ship
+-- | Hit ship at specific position, return updated ship
+-- Returns Nothing if position is not part of this ship
+hitShip :: Position -> Ship -> Maybe Ship
+hitShip pos ship =
+    let positions = getShipPositions ship
+        maybeIndex = findIndex (== pos) positions
+    in case maybeIndex of
+        Nothing -> Nothing  -- Position not in this ship
+        Just idx -> 
+            let newHits = updateAt idx True (shipHits ship)
+            in Just $ ship { shipHits = newHits }
 
--- | Check if ship can be placed at position with orientation
-canPlaceShip :: [Ship] -> ShipType -> Position -> Orientation -> Bool
-canPlaceShip existingShips sType pos orient =
-    let newShip = Ship sType pos orient
-    in case validateSingleShip existingShips newShip of
-        Right _ -> True
-        Left _  -> False
+-- ============================================================================
+-- Helper Functions
+-- ============================================================================
+
+-- Find index of element in list
+findIndex :: Eq a => a -> [a] -> Maybe Int
+findIndex x xs = go 0 xs
+  where
+    go _ [] = Nothing
+    go i (y:ys)
+        | x == y    = Just i
+        | otherwise = go (i + 1) ys
+
+-- Update element at index
+updateAt :: Int -> a -> [a] -> [a]
+updateAt idx val xs = 
+    take idx xs ++ [val] ++ drop (idx + 1) xs
