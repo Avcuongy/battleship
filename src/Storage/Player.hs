@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 {-|
 Save/load player statistics to JSON files.
@@ -13,24 +14,21 @@ When NOT to save:
 -}
 
 module Storage.Player
-    ( -- * Types
-      PlayerStats(..)
+    ( PlayerStats(..)
     , PlayerData(..)
-    
-    -- * Operations
     , savePlayer
     , loadPlayer
     , asyncSavePlayer
-    
-    -- * Utilities
+    , asyncSavePlayerFromRequest
     , getPlayerFilePath
     ) where
 
-import Data.Aeson (FromJSON, ToJSON, encode, decode)
+import Data.Aeson (FromJSON, ToJSON, encode, decode, withObject, (.:), (.=), object)
 import qualified Data.ByteString.Lazy as BL
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
+import Control.Exception (catch, SomeException)
 
 import qualified Storage.FileIO as FileIO
 
@@ -38,7 +36,6 @@ import qualified Storage.FileIO as FileIO
 -- Types
 -- ============================================================================
 
--- | Player statistics
 data PlayerStats = PlayerStats
     { gamesPlayed :: !Int
     , wins :: !Int
@@ -48,17 +45,15 @@ data PlayerStats = PlayerStats
 instance FromJSON PlayerStats
 instance ToJSON PlayerStats
 
--- | Complete player data (for JSON serialization)
 data PlayerData = PlayerData
     { playerDataName :: !Text
     , playerDataStats :: !PlayerStats
     } deriving (Show, Eq, Generic)
 
 instance FromJSON PlayerData where
-    parseJSON = \v -> do
-        name <- parseJSON v >>= (.: "name")
-        stats <- parseJSON v >>= (.: "stats")
-        return $ PlayerData name stats
+    parseJSON = withObject "PlayerData" $ \v ->
+        PlayerData <$> v .: "name"
+                   <*> v .: "stats"
 
 instance ToJSON PlayerData where
     toJSON pd = object
@@ -66,117 +61,40 @@ instance ToJSON PlayerData where
         , "stats" .= playerDataStats pd
         ]
 
--- Need these imports for JSON
-import Data.Aeson (object, (.:), (.=), parseJSON)
-import Control.Applicative ((<$>), (<*>))
-
 -- ============================================================================
 -- File Path
 -- ============================================================================
 
--- | Get file path for player ID
--- Format: data/players/<playerId>.json
 getPlayerFilePath :: Text -> FilePath
-getPlayerFilePath playerId = 
-    "data/players/" ++ T.unpack playerId ++ ".json"
+getPlayerFilePath pid = "data/players/" ++ T.unpack pid ++ ".json"
 
 -- ============================================================================
--- Save Operations
+-- Save/Load Operations
 -- ============================================================================
 
-{-|
-Synchronously save player data.
-Used when immediate persistence is required.
-
-Example:
->>> savePlayer "abc123" "Player1" (PlayerStats 10 6 4)
--}
 savePlayer :: Text -> Text -> PlayerStats -> IO ()
-savePlayer playerId playerName stats = do
-    let playerData = PlayerData
-            { playerDataName = playerName
-            , playerDataStats = stats
-            }
-    
-    let path = getPlayerFilePath playerId
-    let jsonData = encode playerData
-    
-    FileIO.syncSave path jsonData
-    putStrLn $ "Saved player: " ++ T.unpack playerId
+savePlayer pid name stats = do
+    let pdata = PlayerData name stats
+        path = getPlayerFilePath pid
+    FileIO.syncSave path (encode pdata)
+        `catch` \(e :: SomeException) -> putStrLn $ "Save failed: " ++ show e
 
-{-|
-Asynchronously save player data (non-blocking).
-Used for beforeunload events (navigator.sendBeacon).
-
-Example:
->>> asyncSavePlayer "abc123" "Player1" (PlayerStats 10 6 4)
->>> -- Returns immediately, save happens in background
--}
 asyncSavePlayer :: Text -> Text -> PlayerStats -> IO ()
-asyncSavePlayer playerId playerName stats = do
-    let playerData = PlayerData
-            { playerDataName = playerName
-            , playerDataStats = stats
-            }
-    
-    let path = getPlayerFilePath playerId
-    let jsonData = encode playerData
-    
-    FileIO.asyncSave path jsonData
+asyncSavePlayer pid name stats = do
+    let pdata = PlayerData name stats
+        path = getPlayerFilePath pid
+    FileIO.asyncSave path (encode pdata)
 
--- For API handler (from SavePlayerRequest)
 asyncSavePlayerFromRequest :: Text -> Text -> Int -> Int -> Int -> IO ()
-asyncSavePlayerFromRequest playerId playerName played w l = do
-    let stats = PlayerStats
-            { gamesPlayed = played
-            , wins = w
-            , losses = l
-            }
-    asyncSavePlayer playerId playerName stats
+asyncSavePlayerFromRequest pid name gp w l =
+    asyncSavePlayer pid name (PlayerStats gp w l)
 
--- ============================================================================
--- Load Operations
--- ============================================================================
-
-{-|
-Load player data from file.
-Returns Nothing if file doesn't exist or parse error.
-
-Example:
->>> maybePlayer <- loadPlayer "abc123"
->>> case maybePlayer of
->>>     Just (name, stats) -> print stats
->>>     Nothing -> putStrLn "Player not found"
--}
 loadPlayer :: Text -> IO (Maybe (Text, PlayerStats))
-loadPlayer playerId = do
-    let path = getPlayerFilePath playerId
-    
-    maybeContent <- FileIO.syncLoad path
-    
-    case maybeContent of
-        Nothing -> return Nothing
-        Just content -> do
-            case decode content of
-                Nothing -> do
-                    putStrLn $ "Failed to parse player file: " ++ path
-                    return Nothing
-                Just playerData -> 
-                    return $ Just (playerDataName playerData, playerDataStats playerData)
-
--- ============================================================================
--- Example JSON Format
--- ============================================================================
-
-{-
-File: data/players/abc123.json
-
-{
-  "name": "Player1",
-  "stats": {
-    "gamesPlayed": 15,
-    "wins": 8,
-    "losses": 7
-  }
-}
--}
+loadPlayer pid = do
+    let path = getPlayerFilePath pid
+    maybeBytes <- FileIO.syncLoad path
+    case maybeBytes >>= decode of
+        Nothing -> do
+            putStrLn $ "Failed to load player: " ++ T.unpack pid
+            return Nothing
+        Just pd -> return $ Just (playerDataName pd, playerDataStats pd)

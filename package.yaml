@@ -100,5 +100,6 @@ tests:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
+      - base >= 4.7 && < 5
       - battleship
-      - hspec >= 2.7
+      - hspec

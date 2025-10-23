@@ -169,7 +169,7 @@ processAIAttackHandler req = do
                     status status200
                     json $ AIAttackResponse
                         { aarPlayerResult = makeAttackResult (aaPosition req) playerResult
-                        , aarAiResult = makeAttackResult (Position 0 0) "miss" -- Dummy
+                        , aarAiResult = makeAttackResult (Position 0 0) Board.Miss
                         , aarGameOver = True
                         , aarWinner = Just "player"
                         }

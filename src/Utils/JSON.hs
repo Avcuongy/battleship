@@ -25,6 +25,7 @@ module Utils.JSON
 
 import Data.Aeson (ToJSON, FromJSON, encode, decode, eitherDecode)
 import Data.Aeson.Encode.Pretty (encodePretty, Config(..), defConfig)
+import qualified Data.ByteString.Lazy.Char8 as BL8
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString as BS
@@ -68,14 +69,12 @@ decodeJSONStrict = eitherDecode
 prettyPrintJSON :: ToJSON a => a -> IO ()
 prettyPrintJSON val = do
     let pretty = encodePrettyJSON val
-    BL.putStrLn pretty
+    BL8.putStrLn pretty  -- đổi BL -> BL8
 
 prettyPrintValue :: Aeson.Value -> IO ()
 prettyPrintValue val = do
-    let pretty = encodePretty' prettyConfig val
-    BL.putStrLn pretty
-  where
-    prettyConfig = defConfig { confIndent = 2 }
+    let pretty = encodePretty val  -- dùng encodePretty trực tiếp
+    BL8.putStrLn pretty
 
 -- ============================================================================
 -- Text Helpers

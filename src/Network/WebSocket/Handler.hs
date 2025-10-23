@@ -21,6 +21,7 @@ import qualified State.Manager.Player as PlayerMgr
 import qualified Game.Rules as Rules
 import qualified Game.Board as Board
 import qualified Game.Timer as Timer
+import Network.WebSocket.Types (WebSocketState(..))
 
 -- ============================================================================
 -- Connection Handler (CONCURRENCY)

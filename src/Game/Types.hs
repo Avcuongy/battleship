@@ -151,10 +151,10 @@ instance ToJSON Board
 
 -- | Attack result
 data Result
-    = ResultMiss              -- Attacked water
-    | ResultHit               -- Hit ship (not sunk)
-    | ResultShipSunk !ShipType -- Ship completely sunk
-    deriving (Show, Eq, Generic)
+    = ResultMiss
+    | ResultHit
+    | ResultShipSunk !ShipType
+    deriving (Show, Eq, Generic, NFData, ToJSON, FromJSON)
 
 instance NFData Result
 instance FromJSON Result

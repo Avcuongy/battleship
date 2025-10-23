@@ -7,6 +7,7 @@ module Concurrent.Parallel
     -- * Generic parallel operations
     , parallelMap
     , parallelFilter
+    , sequentialEval
     
     -- * Re-exports from Control.Parallel.Strategies
     , Strategy

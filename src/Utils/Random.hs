@@ -85,23 +85,19 @@ True
 
 This ensures no two IDs are the same (handles collision automatically).
 -}
-generateUniqueId :: TVar (Set String) -> Int -> IO String
+generateUniqueId :: TVar (Set Text) -> Int -> IO Text
 generateUniqueId usedIdsVar len = do
-    candidate <- randomId len
-    
-    -- Check if ID already exists
+    candidate <- randomIdIO len
     exists <- atomically $ do
         usedIds <- readTVar usedIdsVar
         return $ Set.member candidate usedIds
-    
     if exists
-        then generateUniqueId usedIdsVar len  -- Retry with new ID
-        else do
-            -- Mark as used
-            atomically $ do
-                usedIds <- readTVar usedIdsVar
-                writeTVar usedIdsVar (Set.insert candidate usedIds)
+        then generateUniqueId usedIdsVar len
+        else atomically $ do
+            usedIds <- readTVar usedIdsVar
+            writeTVar usedIdsVar (Set.insert candidate usedIds)
             return candidate
+
 
 -- ============================================================================
 -- Position Generation (for AI)

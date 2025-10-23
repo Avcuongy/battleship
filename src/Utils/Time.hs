@@ -57,9 +57,12 @@ getCurrentTimeText = do
 -- ============================================================================
 -- Time Differences
 -- ============================================================================
-Diff :: Timestamp -> Timestamp -> Int
+    
+-- | Difference in seconds
+timeDiff :: Timestamp -> Timestamp -> Int
 timeDiff start end = floor $ diffUTCTime end start
 {-# INLINE timeDiff #-}
+
 
 timeDiffMillis :: Timestamp -> Timestamp -> Int
 timeDiffMillis start end = 

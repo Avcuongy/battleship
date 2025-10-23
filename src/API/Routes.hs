@@ -4,8 +4,8 @@ module API.Routes
     ( setupRoutes
     ) where
 
-import Web.Scotty (ScottyM, post, get, jsonData, param)
-import Network.Wai.Middleware.Static (staticPolicy, addBase, noDots)
+import Web.Scotty (ScottyM, post, get, jsonData, param, middleware)
+import Network.Wai.Middleware.Static (staticPolicy, addBase, noDots, (>->))
 import qualified API.Handlers as Handlers
 
 -- Setup all Scotty routes

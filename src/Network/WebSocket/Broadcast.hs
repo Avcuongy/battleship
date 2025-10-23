@@ -22,6 +22,7 @@ import Network.Protocol
 import qualified State.Manager.Room as RoomMgr
 import qualified State.Manager.Player as PlayerMgr
 import Game.Types (Position, Result(..))
+import Network.WebSocket.Types (WebSocketState(..))
 
 -- ============================================================================
 -- Generic Broadcast

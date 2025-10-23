@@ -28,7 +28,6 @@ import Data.Aeson (FromJSON, ToJSON, decode, encode)
 import qualified Data.ByteString.Lazy as BL
 import Data.Text (Text)
 import GHC.Generics (Generic)
-import Game.Types (Fleet, Position, Result)
 
 -- ============================================================================
 -- Client Messages (Client → Server)

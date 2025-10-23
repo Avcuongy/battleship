@@ -28,7 +28,8 @@ module State.Manager.Player
     , playerExists
     ) where
 
-import Control.Concurrent.STM (TVar, newTVarIO, atomically, readTVar, writeTVar)
+import Control.Concurrent.STM 
+    (TVar, newTVarIO, atomically, readTVar, writeTVar, modifyTVar')
 import Data.Text (Text)
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
@@ -44,10 +45,10 @@ import qualified Utils.Random as Random
 -- Types
 -- ============================================================================
 
--- | Player manager with collision detection
+-- | Player manager with ID collision protection
 data PlayerManager = PlayerManager
     { playersVar :: TVar (Map PlayerId PlayerInfo)
-    , usedIdsVar :: TVar (Set PlayerId)  -- For collision detection
+    , usedIdsVar :: TVar (Set PlayerId)
     }
 
 -- ============================================================================
@@ -61,45 +62,46 @@ newPlayerManager = do
     usedIds <- newTVarIO Set.empty
     return $ PlayerManager players usedIds
 
--- | Generate unique player ID (6 chars, check collision)
+-- | Generate unique player ID (6 chars, retry if collision)
 generateUniquePlayerId :: PlayerManager -> IO PlayerId
-generateUniquePlayerId mgr = do
-    candidate <- Random.randomId 6
-    exists <- atomicMember candidate (usedIdsVar mgr)
-    
-    if exists
-        then generateUniquePlayerId mgr  -- Retry
-        else do
-            -- Mark as used
-            atomicModify (usedIdsVar mgr) (Set.insert candidate)
-            return candidate
+generateUniquePlayerId mgr = atomically $ do
+    ids <- readTVar (usedIdsVar mgr)
+    let loop = do
+            newId <- Random.randomId 6
+            if newId `Set.member` ids
+                then loop
+                else do
+                    let newIds = Set.insert newId ids
+                    writeTVar (usedIdsVar mgr) newIds
+                    return newId
+    loop
 
 -- ============================================================================
 -- Player Operations
 -- ============================================================================
 
--- | Add new player
+-- | Add new player safely (replace if same ID already existed)
 addPlayer :: PlayerManager -> PlayerId -> Text -> IO ()
-addPlayer mgr playerId playerName = do
-    let playerInfo = PlayerInfo
-            { playerId = playerId
-            , playerName = playerName
-            , currentRoomId = Nothing
-            , playerConnection = Nothing
-            }
-    
-    atomicModify (playersVar mgr) (Map.insert playerId playerInfo)
-    atomicModify (usedIdsVar mgr) (Set.insert playerId)
+addPlayer mgr playerId playerName = atomically $ do
+    modifyTVar' (playersVar mgr) $ Map.insert playerId playerInfo
+    modifyTVar' (usedIdsVar mgr) $ Set.insert playerId
+  where
+    playerInfo = PlayerInfo
+        { playerId = playerId
+        , playerName = playerName
+        , currentRoomId = Nothing
+        , playerConnection = Nothing
+        }
 
 -- | Get player info
 getPlayer :: PlayerManager -> PlayerId -> IO (Maybe PlayerInfo)
 getPlayer mgr playerId = atomicLookup playerId (playersVar mgr)
 
--- | Remove player
+-- | Remove player (frees ID as well)
 removePlayer :: PlayerManager -> PlayerId -> IO ()
-removePlayer mgr playerId = do
-    atomicModify (playersVar mgr) (Map.delete playerId)
-    atomicModify (usedIdsVar mgr) (Set.delete playerId)
+removePlayer mgr playerId = atomically $ do
+    modifyTVar' (playersVar mgr) $ Map.delete playerId
+    modifyTVar' (usedIdsVar mgr) $ Set.delete playerId
 
 -- ============================================================================
 -- Connection Management
@@ -107,31 +109,28 @@ removePlayer mgr playerId = do
 
 -- | Add WebSocket connection to player
 addConnection :: PlayerManager -> PlayerId -> WS.Connection -> IO ()
-addConnection mgr playerId conn = do
-    atomically $ do
-        players <- readTVar (playersVar mgr)
-        case Map.lookup playerId players of
-            Nothing -> return ()
-            Just player -> do
-                let updated = player { playerConnection = Just conn }
-                writeTVar (playersVar mgr) (Map.insert playerId updated players)
+addConnection mgr playerId conn = atomically $ do
+    players <- readTVar (playersVar mgr)
+    case Map.lookup playerId players of
+        Nothing -> return ()
+        Just player -> do
+            let updated = player { playerConnection = Just conn }
+            writeTVar (playersVar mgr) (Map.insert playerId updated players)
 
--- | Remove connection (on disconnect)
+-- | Remove WebSocket connection
 removeConnection :: PlayerManager -> PlayerId -> IO ()
-removeConnection mgr playerId = do
-    atomically $ do
-        players <- readTVar (playersVar mgr)
-        case Map.lookup playerId players of
-            Nothing -> return ()
-            Just player -> do
-                let updated = player { playerConnection = Nothing }
-                writeTVar (playersVar mgr) (Map.insert playerId updated players)
+removeConnection mgr playerId = atomically $ do
+    players <- readTVar (playersVar mgr)
+    case Map.lookup playerId players of
+        Nothing -> return ()
+        Just player -> do
+            let updated = player { playerConnection = Nothing }
+            writeTVar (playersVar mgr) (Map.insert playerId updated players)
 
--- | Get player connection
+-- | Get connection (if exists)
 getConnection :: PlayerManager -> PlayerId -> IO (Maybe WS.Connection)
 getConnection mgr playerId = do
-    maybePlayer <- getPlayer mgr playerId
-    return $ maybePlayer >>= playerConnection
+    fmap playerConnection <$> getPlayer mgr playerId
 
 -- ============================================================================
 -- Query Operations
@@ -139,9 +138,7 @@ getConnection mgr playerId = do
 
 -- | Get player name
 getPlayerName :: PlayerManager -> PlayerId -> IO (Maybe Text)
-getPlayerName mgr playerId = do
-    maybePlayer <- getPlayer mgr playerId
-    return $ fmap playerName maybePlayer
+getPlayerName mgr playerId = fmap playerName <$> getPlayer mgr playerId
 
 -- | Check if player exists
 playerExists :: PlayerManager -> PlayerId -> IO Bool
