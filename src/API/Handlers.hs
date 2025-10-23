@@ -25,20 +25,21 @@ import qualified Game.AI as AI
 import qualified Game.Board as Board
 import qualified Storage.Player as PlayerStorage
 import qualified Utils.Random as Random
-import Game.Types (Fleet, Position)
+import Game.Types (Fleet, Position(..), Result(..))
+import qualified State.Types as ST
 
 -- ============================================================================
 -- Room Handlers (1vs1)
 -- ============================================================================
 
 -- POST /api/rooms/create
-createRoomHandler :: CreateRoomRequest -> ActionM ()
-createRoomHandler req = do
+createRoomHandler :: RoomMgr.RoomManager -> CreateRoomRequest -> ActionM ()
+createRoomHandler roomMgr req = do
     -- Generate unique room ID (6 chars a-zA-Z case-sensitive)
     roomId <- liftIO $ RoomMgr.generateUniqueRoomId
     
     -- Create room in STM state (status: "ready")
-    result <- liftIO $ atomically $ RoomMgr.createRoom roomId (crPlayerId req) (crPlayerName req)
+    result <- liftIO $ RoomMgr.createRoom roomMgr roomId (crPlayerId req) (crPlayerName req)
     
     case result of
         Right _ -> do
@@ -55,10 +56,11 @@ createRoomHandler req = do
                 }
 
 -- POST /api/rooms/join
-joinRoomHandler :: JoinRoomRequest -> ActionM ()
-joinRoomHandler req = do
+joinRoomHandler :: RoomMgr.RoomManager -> JoinRoomRequest -> ActionM ()
+joinRoomHandler roomMgr req = do
     -- Check if room exists and not full
-    result <- liftIO $ atomically $ RoomMgr.joinRoom 
+    result <- liftIO $ RoomMgr.joinRoom 
+        roomMgr
         (jrRoomId req) 
         (jrPlayerId req) 
         (jrPlayerName req)
@@ -78,24 +80,24 @@ joinRoomHandler req = do
                 }
 
 -- GET /api/rooms/:id
-getRoomHandler :: Text -> ActionM ()
-getRoomHandler roomId = do
+getRoomHandler :: RoomMgr.RoomManager -> Text -> ActionM ()
+getRoomHandler roomMgr roomId = do
     -- Get room state from STM
-    maybeRoom <- liftIO $ atomically $ RoomMgr.getRoomState roomId
+    maybeRoom <- liftIO $ RoomMgr.getRoomState roomMgr roomId
     
     case maybeRoom of
         Just room -> do
             status status200
             json $ GetRoomResponse
-                { grrRoomId = RoomMgr.roomId room
+                { grrRoomId = ST.roomId room
                 , grrGameMode = "1vs1"
-                , grrStatus = RoomMgr.roomStatus room
-                , grrPlayer1Id = RoomMgr.player1Id room
-                , grrPlayer1Name = RoomMgr.player1Name room
-                , grrPlayer1Ready = RoomMgr.player1Ready room
-                , grrPlayer2Id = RoomMgr.player2Id room
-                , grrPlayer2Name = RoomMgr.player2Name room
-                , grrPlayer2Ready = RoomMgr.player2Ready room
+                , grrStatus = T.pack $ show (ST.status room)
+                , grrPlayer1Id = ST.player1Id room
+                , grrPlayer1Name = ST.player1Name room
+                , grrPlayer1Ready = ST.player1Ready room
+                , grrPlayer2Id = ST.player2Id room
+                , grrPlayer2Name = ST.player2Name room
+                , grrPlayer2Ready = Just (ST.player2Ready room)
                 }
         Nothing -> do
             status status404
@@ -109,8 +111,8 @@ getRoomHandler roomId = do
 -- ============================================================================
 
 -- POST /api/ai/start
-startAIHandler :: AIStartRequest -> ActionM ()
-startAIHandler req = do
+startAIHandler :: AIMgr.AIManager -> AIStartRequest -> ActionM ()
+startAIHandler aiMgr req = do
     -- Validate player fleet (single fleet, NO parallel)
     let isValid = Rules.validateFleet (aiFleet req)
     
@@ -127,7 +129,8 @@ startAIHandler req = do
             gameId <- liftIO $ AIMgr.generateUniqueGameId
             
             -- Create AI session in STM (AI ships: fixed preset)
-            liftIO $ atomically $ AIMgr.createAISession 
+            liftIO $ AIMgr.createAISession 
+                aiMgr
                 gameId 
                 (aiPlayerId req)
                 (aiPlayerName req)
@@ -141,10 +144,10 @@ startAIHandler req = do
                 }
 
 -- POST /api/ai/attack
-processAIAttackHandler :: AIAttackRequest -> ActionM ()
-processAIAttackHandler req = do
+processAIAttackHandler :: AIMgr.AIManager -> AIAttackRequest -> ActionM ()
+processAIAttackHandler aiMgr req = do
     -- Get AI session from STM
-    maybeSession <- liftIO $ atomically $ AIMgr.getAISession (aaGameId req)
+    maybeSession <- liftIO $ AIMgr.getAISession aiMgr (aaGameId req)
     
     case maybeSession of
         Nothing -> do
@@ -165,11 +168,11 @@ processAIAttackHandler req = do
             if aiLost
                 then do
                     -- Player wins, game over
-                    liftIO $ atomically $ AIMgr.deleteAISession (aaGameId req)
+                    liftIO $ AIMgr.deleteAISession aiMgr (aaGameId req)
                     status status200
                     json $ AIAttackResponse
                         { aarPlayerResult = makeAttackResult (aaPosition req) playerResult
-                        , aarAiResult = makeAttackResult (Position 0 0) Board.Miss
+                        , aarAiResult = makeAttackResult (Position { posRow = 0, posCol = 0 }) ResultMiss
                         , aarGameOver = True
                         , aarWinner = Just "player"
                         }
@@ -183,7 +186,8 @@ processAIAttackHandler req = do
                     let playerLost = Board.allShipsSunk updatedPlayerBoard
                     
                     -- Update AI session
-                    liftIO $ atomically $ AIMgr.updateAISession 
+                    liftIO $ AIMgr.updateAISession 
+                        aiMgr
                         (aaGameId req)
                         updatedPlayerBoard
                         updatedAIBoard
@@ -191,7 +195,7 @@ processAIAttackHandler req = do
                     if playerLost
                         then do
                             -- AI wins, game over
-                            liftIO $ atomically $ AIMgr.deleteAISession (aaGameId req)
+                            liftIO $ AIMgr.deleteAISession aiMgr (aaGameId req)
                             status status200
                             json $ AIAttackResponse
                                 { aarPlayerResult = makeAttackResult (aaPosition req) playerResult
@@ -217,7 +221,7 @@ processAIAttackHandler req = do
 savePlayerHandler :: SavePlayerRequest -> ActionM ()
 savePlayerHandler req = do
     -- Async save player stats (non-blocking)
-    liftIO $ PlayerStorage.asyncSavePlayer
+    liftIO $ PlayerStorage.asyncSavePlayerFromRequest
         (spPlayerId req)
         (spPlayerName req)
         (spGamesPlayed req)
@@ -231,21 +235,21 @@ savePlayerHandler req = do
 -- Helper Functions
 -- ============================================================================
 
--- Convert Board.Result to API.AttackResult
-makeAttackResult :: Position -> Board.Result -> AttackResult
+-- Convert Game.Types.Result to API.AttackResult
+makeAttackResult :: Position -> Result -> AttackResult
 makeAttackResult pos result =
     case result of
-        Board.Miss -> AttackResult
+        ResultMiss -> AttackResult
             { arPosition = pos
             , arResult = "miss"
             , arShipType = Nothing
             }
-        Board.Hit -> AttackResult
+        ResultHit -> AttackResult
             { arPosition = pos
             , arResult = "hit"
             , arShipType = Nothing
             }
-        Board.ShipSunk shipType -> AttackResult
+        ResultShipSunk shipType -> AttackResult
             { arPosition = pos
             , arResult = "sunk"
             , arShipType = Just (T.pack $ show shipType)

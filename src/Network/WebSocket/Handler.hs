@@ -13,15 +13,16 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.ByteString.Lazy as BL
 
-import Network.WebSocket.Server (WebSocketState(..))
 import qualified Network.WebSocket.Broadcast as Broadcast
 import Network.Protocol
 import qualified State.Manager.Room as RoomMgr
 import qualified State.Manager.Player as PlayerMgr
 import qualified Game.Rules as Rules
 import qualified Game.Board as Board
+import Game.Types (Position, Result(..))
 import qualified Game.Timer as Timer
 import Network.WebSocket.Types (WebSocketState(..))
+import State.Types (GameStatus(..))
 
 -- ============================================================================
 -- Connection Handler (CONCURRENCY)
@@ -39,7 +40,7 @@ without blocking each other.
 handleConnection :: WebSocketState -> WS.Connection -> Text -> Text -> IO ()
 handleConnection state conn roomId playerId = do
     -- Register connection in state
-    atomically $ PlayerMgr.addConnection (wsPlayerManager state) playerId conn
+    PlayerMgr.addConnection (wsPlayerManager state) playerId conn
     
     putStrLn $ "Handling connection for player: " ++ T.unpack playerId
     
@@ -80,7 +81,7 @@ handleReady state conn roomId playerId readyMsg = do
     putStrLn $ "Player ready: " ++ T.unpack playerId
     
     -- Mark player as ready in STM state
-    result <- atomically $ RoomMgr.markPlayerReady 
+    result <- RoomMgr.markPlayerReady 
         (wsRoomManager state) 
         roomId 
         playerId 
@@ -94,12 +95,12 @@ handleReady state conn roomId playerId readyMsg = do
         
         Right _ -> do
             -- Check if both players are ready
-            bothReady <- atomically $ RoomMgr.checkBothReady 
+            bothReady <- RoomMgr.checkBothReady 
                 (wsRoomManager state) roomId
             
             when bothReady $ do
-                -- ★ PARALLEL VALIDATION (from Game.Rules)
-                maybeFleets <- atomically $ RoomMgr.getBothFleets 
+                -- PARALLEL VALIDATION (from Game.Rules)
+                maybeFleets <- RoomMgr.getBothFleets 
                     (wsRoomManager state) roomId
                 
                 case maybeFleets of
@@ -111,8 +112,8 @@ handleReady state conn roomId playerId readyMsg = do
                         if valid1 && valid2
                             then do
                                 -- Both valid: start game
-                                atomically $ RoomMgr.setRoomStatus 
-                                    (wsRoomManager state) roomId "in_progress"
+                                RoomMgr.setRoomStatus 
+                                    (wsRoomManager state) roomId InProgress
                                 
                                 -- Broadcast game start
                                 Broadcast.broadcastGameStart state roomId
@@ -134,7 +135,7 @@ handleAttack state conn roomId playerId attackMsg = do
     
     -- Check timeout (server-side validation)
     now <- Timer.getCurrentTimestamp
-    maybeTurnStart <- atomically $ RoomMgr.getTurnStartTime 
+    maybeTurnStart <- RoomMgr.getTurnStartTime 
         (wsRoomManager state) roomId
     
     case maybeTurnStart of
@@ -144,7 +145,7 @@ handleAttack state conn roomId playerId attackMsg = do
                 then do
                     -- Timeout: next player's turn
                     putStrLn $ "Timeout for " ++ T.unpack playerId
-                    atomically $ RoomMgr.nextTurn (wsRoomManager state) roomId
+                    RoomMgr.nextTurn (wsRoomManager state) roomId
                     Broadcast.broadcastTimeout state roomId playerId
                 else do
                     -- Valid: process attack
@@ -154,7 +155,7 @@ handleAttack state conn roomId playerId attackMsg = do
 processAttack :: WebSocketState -> Text -> Text -> Position -> IO ()
 processAttack state roomId playerId pos = do
     -- Get opponent board from room state
-    maybeBoard <- atomically $ RoomMgr.getOpponentBoard 
+    maybeBoard <- RoomMgr.getOpponentBoard 
         (wsRoomManager state) roomId playerId
     
     case maybeBoard of
@@ -164,7 +165,7 @@ processAttack state roomId playerId pos = do
             let (result, newBoard) = Board.processAttack pos board
             
             -- Update board in state
-            atomically $ RoomMgr.updateOpponentBoard 
+            RoomMgr.updateOpponentBoard 
                 (wsRoomManager state) roomId playerId newBoard
             
             -- Check win condition
@@ -173,22 +174,22 @@ processAttack state roomId playerId pos = do
             if gameOver
                 then do
                     -- Game over: broadcast winner
-                    atomically $ RoomMgr.setRoomStatus 
-                        (wsRoomManager state) roomId "done"
+                    RoomMgr.setRoomStatus 
+                        (wsRoomManager state) roomId Done
                     Broadcast.broadcastGameOver state roomId playerId
                 else do
                     -- Game continues
                     case result of
-                        Board.ResultMiss -> do
+                        ResultMiss -> do
                             -- Miss: next player's turn
-                            atomically $ RoomMgr.nextTurn 
+                            RoomMgr.nextTurn 
                                 (wsRoomManager state) roomId
                         
-                        Board.ResultHit -> do
+                        ResultHit -> do
                             -- Hit: same player continues (no timer reset)
                             return ()
                         
-                        Board.ResultShipSunk _ -> do
+                        ResultShipSunk _ -> do
                             -- Ship sunk: same player continues
                             return ()
                     
@@ -206,13 +207,13 @@ handleDisconnect state roomId playerId ex = do
              ++ ", error: " ++ show ex
     
     -- Remove connection from state
-    atomically $ PlayerMgr.removeConnection (wsPlayerManager state) playerId
+    PlayerMgr.removeConnection (wsPlayerManager state) playerId
     
     -- Set room status to done (don't save stats as per requirements)
-    atomically $ RoomMgr.setRoomStatus (wsRoomManager state) roomId "done"
+    RoomMgr.setRoomStatus (wsRoomManager state) roomId Done
     
     -- Get opponent ID
-    maybeOpponent <- atomically $ RoomMgr.getOpponentId 
+    maybeOpponent <- RoomMgr.getOpponentId 
         (wsRoomManager state) roomId playerId
     
     case maybeOpponent of

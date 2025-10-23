@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 {-|
 Save/load player statistics to JSON files.
@@ -40,26 +42,12 @@ data PlayerStats = PlayerStats
     { gamesPlayed :: !Int
     , wins :: !Int
     , losses :: !Int
-    } deriving (Show, Eq, Generic)
-
-instance FromJSON PlayerStats
-instance ToJSON PlayerStats
+    } deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 data PlayerData = PlayerData
     { playerDataName :: !Text
     , playerDataStats :: !PlayerStats
-    } deriving (Show, Eq, Generic)
-
-instance FromJSON PlayerData where
-    parseJSON = withObject "PlayerData" $ \v ->
-        PlayerData <$> v .: "name"
-                   <*> v .: "stats"
-
-instance ToJSON PlayerData where
-    toJSON pd = object
-        [ "name" .= playerDataName pd
-        , "stats" .= playerDataStats pd
-        ]
+    } deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- ============================================================================
 -- File Path

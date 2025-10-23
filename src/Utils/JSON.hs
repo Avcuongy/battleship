@@ -24,7 +24,7 @@ module Utils.JSON
     ) where
 
 import Data.Aeson (ToJSON, FromJSON, encode, decode, eitherDecode)
-import Data.Aeson.Encode.Pretty (encodePretty, Config(..), defConfig)
+import Data.Aeson.Encode.Pretty (encodePretty, encodePrettyToTextBuilder, Config(..), defConfig, confIndent, confCompare)
 import qualified Data.ByteString.Lazy.Char8 as BL8
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy as BL
@@ -43,12 +43,7 @@ encodeJSON = encode
 {-# INLINE encodeJSON #-}
 
 encodePrettyJSON :: ToJSON a => a -> BL.ByteString
-encodePrettyJSON = encodePretty' prettyConfig
-  where
-    prettyConfig = defConfig
-        { confIndent = 2  -- 2-space indentation
-        , confCompare = compare  -- Sort keys alphabetically
-        }
+encodePrettyJSON = encodePretty
 
 -- ============================================================================
 -- Decoding

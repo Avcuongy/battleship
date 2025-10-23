@@ -72,7 +72,7 @@ newRoomManager = do
 
 -- | Generate unique 6-char room ID (case-sensitive)
 generateUniqueRoomId :: IO RoomId
-generateUniqueRoomId = Random.randomId 6
+generateUniqueRoomId = Random.randomIdIO 6
 
 -- ============================================================================
 -- Room Operations

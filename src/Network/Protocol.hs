@@ -29,6 +29,8 @@ import qualified Data.ByteString.Lazy as BL
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
+import Game.Types (Fleet, Position)
+
 -- ============================================================================
 -- Client Messages (Client → Server)
 -- ============================================================================

@@ -15,6 +15,7 @@ module Game.Ship
     ) where
 
 import Game.Types
+import Data.List (elemIndex)
 
 -- ============================================================================
 -- Ship Creation
@@ -71,7 +72,7 @@ canPlaceShip ship =
 hitShip :: Position -> Ship -> Maybe Ship
 hitShip pos ship =
     let positions = getShipPositions ship
-        maybeIndex = findIndex (== pos) positions
+        maybeIndex = elemIndex pos positions
     in case maybeIndex of
         Nothing -> Nothing  -- Position not in this ship
         Just idx -> 

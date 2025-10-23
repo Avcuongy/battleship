@@ -156,6 +156,3 @@ data Result
     | ResultShipSunk !ShipType
     deriving (Show, Eq, Generic, NFData, ToJSON, FromJSON)
 
-instance NFData Result
-instance FromJSON Result
-instance ToJSON Result

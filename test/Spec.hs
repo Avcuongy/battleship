@@ -1,51 +1,63 @@
-{-# LANGUAGE OverloadedStrings #-}
+﻿{-# LANGUAGE OverloadedStrings #-}
 
--- | Test compilation and basic sanity checks for all Game modules.
--- This does NOT run gameplay logic — just ensures that all types
--- and functions in Game/* compile and load correctly.
+module Main (main) where
 
-module TestGame where
-
+import Test.Hspec
 import Game.Types
 import Game.Ship
 import Game.Board
-import Game.AI
-import Game.Rules
-import Game.Timer
-
--- ============================================================================
--- Dummy test: simple sanity checks
--- ============================================================================
+import qualified Game.Rules
 
 main :: IO ()
-main = do
-    putStrLn "✅ Loading all Game modules..."
-    putStrLn "----------------------------------------"
+main = hspec $ do
+    gameTypesSpec
+    gameShipSpec
+    gameBoardSpec
+    gameRulesSpec
 
-    -- Test Position conversion round-trip
-    let pos = Position 0 4
-    putStrLn $ "Position test: " ++ show (positionToString pos)
+gameTypesSpec :: Spec
+gameTypesSpec = describe "Game.Types" $ do
+    it "Position has row and col" $ do
+        let pos = Position {posRow = 5, posCol = 5}
+        posRow pos `shouldBe` 5
+        posCol pos `shouldBe` 5
 
-    -- Test ship creation
-    let ship = makeShip Destroyer (Position 0 0) Horizontal
-    putStrLn $ "Ship created: " ++ show (shipType ship)
+gameShipSpec :: Spec
+gameShipSpec = describe "Game.Ship" $ do
+    it "makeShip creates ship with correct type" $ do
+        let ship = makeShip Carrier (Position {posRow=0, posCol=0}) Horizontal
+        shipType ship `shouldBe` Carrier
+    
+    it "isSunk returns False for new ship" $ do
+        let ship = makeShip Destroyer (Position {posRow=0, posCol=0}) Horizontal
+        isSunk ship `shouldBe` False
+    
+    it "getShipPositions returns correct number of positions" $ do
+        let ship = makeShip Cruiser (Position {posRow=0, posCol=0}) Horizontal
+            positions = getShipPositions ship
+        length positions `shouldBe` 3
 
-    -- Test fleet creation
-    let fleet = [ship]
-    print $ "Fleet size = " ++ show (length fleet)
+gameBoardSpec :: Spec
+gameBoardSpec = describe "Game.Board" $ do
+    it "allShipsSunk returns True for empty board" $ do
+        let board = emptyBoard
+        allShipsSunk board `shouldBe` True
 
-    -- Test board creation
-    let board = createBoard fleet
-    putStrLn $ "Board created, first cell: " ++ show (getCellAt (Position 0 0) board)
-
-    -- Test AI move selection (random)
-    aiMove <- chooseAIMove board
-    putStrLn $ "AI chose move: " ++ show aiMove
-
-    -- Test timer
-    t1 <- getCurrentTimestamp
-    t2 <- getCurrentTimestamp
-    putStrLn $ "Time diff = " ++ show (timeDiff t1 t2)
-
-    putStrLn "----------------------------------------"
-    putStrLn "✅ All Game modules compiled and basic checks passed!"
+gameRulesSpec :: Spec
+gameRulesSpec = describe "Game.Rules" $ do
+    it "validateFleet accepts valid fleet" $ do
+        let fleet = makeFleet
+                [ (Carrier, Position {posRow=0, posCol=0}, Horizontal)
+                , (Battleship, Position {posRow=1, posCol=0}, Horizontal)
+                , (Cruiser, Position {posRow=2, posCol=0}, Horizontal)
+                , (Submarine, Position {posRow=3, posCol=0}, Horizontal)
+                , (Destroyer, Position {posRow=4, posCol=0}, Horizontal)
+                ]
+        Game.Rules.validateFleet fleet `shouldBe` True
+    
+    it "correctShipCount validates fleet size" $ do
+        let fleet = makeFleet
+                [ (Carrier, Position {posRow=0, posCol=0}, Horizontal)
+                , (Battleship, Position {posRow=1, posCol=0}, Horizontal)
+                ]
+        Game.Rules.correctShipCount fleet `shouldBe` False

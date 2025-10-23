@@ -58,7 +58,7 @@ newAIManager = do
 
 -- | Generate unique game ID
 generateUniqueGameId :: IO GameId
-generateUniqueGameId = Random.randomId 8
+generateUniqueGameId = Random.randomIdIO 8
 
 -- ============================================================================
 -- Session Operations

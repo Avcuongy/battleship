@@ -19,16 +19,7 @@ import qualified Data.ByteString.Char8 as BS
 import qualified Data.Text.Encoding as TE
 
 import qualified Network.WebSocket.Handler as Handler
-import State.Manager.Room (RoomManager)
-import State.Manager.Player (PlayerManager)
-
--- ======================================================================
--- | Global state
-data WebSocketState = WebSocketState
-    { wsRoomManager   :: RoomManager
-    , wsPlayerManager :: PlayerManager
-    , wsConnections   :: TVar (Map T.Text WS.Connection)
-    }
+import Network.WebSocket.Types (WebSocketState(..))
 
 -- ======================================================================
 -- | Start WebSocket server
@@ -73,8 +64,8 @@ parseParams :: BS.ByteString -> Maybe (T.Text, T.Text)
 parseParams path =
     let queryStr = BS.dropWhile (/= '?') path
         params = BS.split '&' (BS.drop 1 queryStr)
-        lookupParam key = lookup key [BS.break (== '=') p | p <- params]
-        getVal key = fmap (TE.decodeUtf8 . BS.drop 1 . snd) (lookup key [(BS.takeWhile (/='=' ) p, p) | p <- params])
+        parsedParams = [BS.break (== '=') p | p <- params]
+        getVal key = fmap (TE.decodeUtf8 . BS.drop 1) (lookup key parsedParams)
     in case (getVal "roomId", getVal "playerId") of
         (Just rid, Just pid) -> Just (rid, pid)
         _ -> Nothing

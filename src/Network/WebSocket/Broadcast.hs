@@ -17,7 +17,6 @@ import Control.Concurrent.STM (atomically)
 import Data.Text (Text)
 import qualified Data.Text as T
 
-import Network.WebSocket.Server (WebSocketState(..))
 import Network.Protocol
 import qualified State.Manager.Room as RoomMgr
 import qualified State.Manager.Player as PlayerMgr
@@ -32,16 +31,16 @@ import Network.WebSocket.Types (WebSocketState(..))
 broadcastToRoom :: WebSocketState -> Text -> ServerMessage -> IO ()
 broadcastToRoom state roomId msg = do
     -- Get player IDs in room
-    maybePlayerIds <- atomically $ RoomMgr.getRoomPlayerIds 
+    maybePlayerIds <- RoomMgr.getRoomPlayerIds
         (wsRoomManager state) roomId
     
     case maybePlayerIds of
         Nothing -> return ()
         Just (player1Id, player2Id) -> do
             -- Get connections
-            maybeConn1 <- atomically $ PlayerMgr.getConnection 
+            maybeConn1 <- PlayerMgr.getConnection 
                 (wsPlayerManager state) player1Id
-            maybeConn2 <- atomically $ PlayerMgr.getConnection 
+            maybeConn2 <- PlayerMgr.getConnection 
                 (wsPlayerManager state) player2Id
             
             -- Send to both players
@@ -73,7 +72,7 @@ broadcastAttackResult state roomId attackerId pos result = do
     nextTurn <- case result of
         ResultMiss -> do
             -- Miss: opponent's turn
-            maybeOpponent <- atomically $ RoomMgr.getOpponentId 
+            maybeOpponent <- RoomMgr.getOpponentId 
                 (wsRoomManager state) roomId attackerId
             return $ maybe attackerId id maybeOpponent
         
@@ -103,7 +102,7 @@ broadcastAttackResult state roomId attackerId pos result = do
 broadcastGameOver :: WebSocketState -> Text -> Text -> IO ()
 broadcastGameOver state roomId winnerId = do
     -- Get winner name
-    maybeWinnerName <- atomically $ PlayerMgr.getPlayerName 
+    maybeWinnerName <- PlayerMgr.getPlayerName 
         (wsPlayerManager state) winnerId
     
     let winnerName = maybe "Unknown" id maybeWinnerName

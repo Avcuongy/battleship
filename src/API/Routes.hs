@@ -7,10 +7,12 @@ module API.Routes
 import Web.Scotty (ScottyM, post, get, jsonData, param, middleware)
 import Network.Wai.Middleware.Static (staticPolicy, addBase, noDots, (>->))
 import qualified API.Handlers as Handlers
+import qualified State.Manager.Room as RoomMgr
+import qualified State.Manager.AI as AIMgr
 
 -- Setup all Scotty routes
-setupRoutes :: ScottyM ()
-setupRoutes = do
+setupRoutes :: RoomMgr.RoomManager -> AIMgr.AIManager -> ScottyM ()
+setupRoutes roomMgr aiMgr = do
     -- Serve static files from client/ directory
     middleware $ staticPolicy (noDots >-> addBase "client")
     
@@ -23,20 +25,20 @@ setupRoutes = do
     -- Response: {"crrRoomId": "XyZ789", "crrStatus": "success"}
     post "/api/rooms/create" $ do
         req <- jsonData
-        Handlers.createRoomHandler req
+        Handlers.createRoomHandler roomMgr req
     
     -- POST /api/rooms/join
     -- Body: {"jrRoomId": "XyZ789", "jrPlayerId": "def456", "jrPlayerName": "Player2"}
     -- Response: {"jrrStatus": "success", "jrrMessage": null}
     post "/api/rooms/join" $ do
         req <- jsonData
-        Handlers.joinRoomHandler req
+        Handlers.joinRoomHandler roomMgr req
     
     -- GET /api/rooms/:id
     -- Response: {"grrRoomId": "XyZ789", "grrGameMode": "1vs1", "grrStatus": "ready", ...}
     get "/api/rooms/:id" $ do
         roomId <- param "id"
-        Handlers.getRoomHandler roomId
+        Handlers.getRoomHandler roomMgr roomId
     
     -- ========================================================================
     -- AI Routes
@@ -47,14 +49,14 @@ setupRoutes = do
     -- Response: {"asrGameId": "game789", "asrStatus": "success", "asrMessage": null}
     post "/api/ai/start" $ do
         req <- jsonData
-        Handlers.startAIHandler req
+        Handlers.startAIHandler aiMgr req
     
     -- POST /api/ai/attack
     -- Body: {"aaGameId": "game789", "aaPosition": {"row": 5, "col": 3}}
     -- Response: {"aarPlayerResult": {...}, "aarAiResult": {...}, "aarGameOver": false, ...}
     post "/api/ai/attack" $ do
         req <- jsonData
-        Handlers.processAIAttackHandler req
+        Handlers.processAIAttackHandler aiMgr req
     
     -- ========================================================================
     -- Player Stats Route

@@ -30,6 +30,7 @@ module State.Manager.Player
 
 import Control.Concurrent.STM 
     (TVar, newTVarIO, atomically, readTVar, writeTVar, modifyTVar')
+import Control.Monad (join)
 import Data.Text (Text)
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
@@ -64,17 +65,19 @@ newPlayerManager = do
 
 -- | Generate unique player ID (6 chars, retry if collision)
 generateUniquePlayerId :: PlayerManager -> IO PlayerId
-generateUniquePlayerId mgr = atomically $ do
-    ids <- readTVar (usedIdsVar mgr)
-    let loop = do
-            newId <- Random.randomId 6
-            if newId `Set.member` ids
-                then loop
-                else do
-                    let newIds = Set.insert newId ids
-                    writeTVar (usedIdsVar mgr) newIds
-                    return newId
-    loop
+generateUniquePlayerId mgr = do
+    newId <- Random.randomIdIO 6
+    isUnique <- atomically $ do
+        ids <- readTVar (usedIdsVar mgr)
+        if newId `Set.member` ids
+            then return False
+            else do
+                let newIds = Set.insert newId ids
+                writeTVar (usedIdsVar mgr) newIds
+                return True
+    if isUnique
+        then return newId
+        else generateUniquePlayerId mgr  -- Retry if collision
 
 -- ============================================================================
 -- Player Operations
@@ -130,7 +133,7 @@ removeConnection mgr playerId = atomically $ do
 -- | Get connection (if exists)
 getConnection :: PlayerManager -> PlayerId -> IO (Maybe WS.Connection)
 getConnection mgr playerId = do
-    fmap playerConnection <$> getPlayer mgr playerId
+    join . fmap playerConnection <$> getPlayer mgr playerId
 
 -- ============================================================================
 -- Query Operations
