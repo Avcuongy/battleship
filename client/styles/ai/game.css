@@ -241,3 +241,150 @@ body {
     font-size: 14px;
   }
 }
+
+/* ============================================================================
+   Game Over Modal
+   ============================================================================ */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-content {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 50px 60px;
+  box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  min-width: 400px;
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-title {
+  font-size: 3rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.modal-message {
+  font-size: 1.5rem;
+  color: #555;
+  margin-bottom: 15px;
+}
+
+.modal-player-name {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #2a5298;
+  margin-bottom: 40px;
+  padding: 10px;
+  background: rgba(42, 82, 152, 0.1);
+  border-radius: 10px;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.modal-btn {
+  padding: 15px 40px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 1px;
+}
+
+.modal-btn.primary {
+  background: #4caf50;
+  color: white;
+}
+
+.modal-btn.primary:hover {
+  background: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+}
+
+.modal-btn.secondary {
+  background: #2a5298;
+  color: white;
+}
+
+.modal-btn.secondary:hover {
+  background: #1e3c72;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(42, 82, 152, 0.4);
+}
+
+.modal-btn:active {
+  transform: translateY(0);
+}
+
+/* Responsive modal */
+@media (max-width: 768px) {
+  .modal-content {
+    min-width: 300px;
+    padding: 40px 30px;
+  }
+
+  .modal-title {
+    font-size: 2rem;
+  }
+
+  .modal-message {
+    font-size: 1.2rem;
+  }
+
+  .modal-player-name {
+    font-size: 1.4rem;
+  }
+
+  .modal-buttons {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .modal-btn {
+    width: 100%;
+    padding: 12px 30px;
+    font-size: 1rem;
+  }
+}

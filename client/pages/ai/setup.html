@@ -33,12 +33,18 @@
         <!-- Instructions Left -->
         <div class="instructions-left">
           <div class="instruction-title">CÁCH ĐẶT TÀU</div>
-          <div class="instruction-text">1. Click vào tàu để chọn</div>
-          <div class="instruction-text">2. Di chuột trên bảng</div>
-          <div class="instruction-text">3. Chuột phải để xoay</div>
-          <div class="instruction-text">4. Chuột trái để đặt</div>
+          <div class="instruction-text">Click vào tàu</div>
+          <div class="instruction-text">Di chuột trên bảng</div>
           <!-- Placement error message -->
-          <div id="placementError" style="display: none; color: #ff5252; margin-top: 10px; font-size: 12px;"></div>
+          <div
+            id="placementError"
+            style="
+              display: none;
+              color: #ff5252;
+              margin-top: 10px;
+              font-size: 12px;
+            "
+          ></div>
         </div>
 
         <!-- Main Setup Content -->
@@ -104,11 +110,9 @@
 
         <!-- Instructions Right -->
         <div class="instructions-right">
-          <div class="instruction-title">HƯỚNG TÀU</div>
-          <div class="instruction-text">Chuột phải hoặc phím R</div>
-          <div class="instruction-text orientation-display">
-            <span id="orientationText">Horizontal</span>
-          </div>
+          <div class="instruction-title">CÁCH XOAY TÀU</div>
+          <div class="instruction-text">Chuột trái để xoay</div>
+          <div class="instruction-text">Chuột phải để đặt</div>
         </div>
       </div>
     </div>
@@ -117,11 +121,11 @@
     <script src="../../scripts/utils/storage.js"></script>
     <script src="../../scripts/utils/api.js"></script>
     <script src="../../scripts/utils/validation.js"></script>
-    
+
     <!-- Load shared components -->
     <script src="../../scripts/shared/board.js"></script>
     <script src="../../scripts/shared/ships.js"></script>
-    
+
     <!-- Load page script -->
     <script src="../../scripts/ai/setup.js"></script>
   </body>

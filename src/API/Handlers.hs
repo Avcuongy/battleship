@@ -14,6 +14,7 @@ import Control.Concurrent.STM (atomically)
 import Control.Monad.IO.Class (liftIO)
 import Data.Text (Text)
 import qualified Data.Text as T
+import Data.Aeson (object, (.=), Value(Null))
 import Web.Scotty (ActionM, json, status)
 import Network.HTTP.Types.Status (status200, status400, status404, status500)
 
@@ -178,36 +179,63 @@ processAIAttackHandler aiMgr req = do
                         , aarWinner = Just "player"
                         }
                 else do
-                    -- AI's turn (instant response, no timer)
-                    aiMove <- liftIO $ AI.chooseAIMove (AIMgr.playerBoard session)
-                    let (aiResult, updatedPlayerBoard) = 
-                            Board.processAttack aiMove (AIMgr.playerBoard session)
-                    
-                    -- Check if player lost
-                    let playerLost = Board.allShipsSunk updatedPlayerBoard
-                    
-                    -- Update AI session
-                    liftIO $ AIMgr.updateAISession 
-                        aiMgr
-                        (aaGameId req)
-                        updatedPlayerBoard
-                        updatedAIBoard
-                    
-                    if playerLost
-                        then do
-                            -- AI wins, game over
-                            liftIO $ AIMgr.deleteAISession aiMgr (aaGameId req)
+                    -- Check if player hit or missed
+                    case playerResult of
+                        -- Player MISSED - AI's turn
+                        ResultMiss -> do
+                            aiMove <- liftIO $ AI.chooseAIMove (AIMgr.playerBoard session)
+                            let (aiResult, updatedPlayerBoard) = 
+                                    Board.processAttack aiMove (AIMgr.playerBoard session)
+                            
+                            -- Check if player lost
+                            let playerLost = Board.allShipsSunk updatedPlayerBoard
+                            
+                            -- Update AI session
+                            liftIO $ AIMgr.updateAISession 
+                                aiMgr
+                                (aaGameId req)
+                                updatedPlayerBoard
+                                updatedAIBoard
+                            
+                            if playerLost
+                                then do
+                                    -- AI wins, game over
+                                    liftIO $ AIMgr.deleteAISession aiMgr (aaGameId req)
+                                    status status200
+                                    json $ AIAttackResponse
+                                        { aarPlayerResult = makeAttackResult (aaPosition req) playerResult
+                                        , aarAiResult = makeAttackResult aiMove aiResult
+                                        , aarGameOver = True
+                                        , aarWinner = Just "ai"
+                                        }
+                                else do
+                                    -- Game continues, AI attacked
+                                    status status200
+                                    json $ AIAttackResponse
+                                        { aarPlayerResult = makeAttackResult (aaPosition req) playerResult
+                                        , aarAiResult = makeAttackResult aiMove aiResult
+                                        , aarGameOver = False
+                                        , aarWinner = Nothing
+                                        }
+                        
+                        -- Player HIT or SUNK - player continues (no AI attack)
+                        _ -> do
+                            -- Update AI session (only AI board changed)
+                            liftIO $ AIMgr.updateAISession 
+                                aiMgr
+                                (aaGameId req)
+                                (AIMgr.playerBoard session)  -- Player board unchanged
+                                updatedAIBoard
+                            
+                            -- Game continues, player's turn again (no AI result)
                             status status200
-                            json $ AIAttackResponse
-                                { aarPlayerResult = makeAttackResult (aaPosition req) playerResult
-                                , aarAiResult = makeAttackResult aiMove aiResult
-                                , aarGameOver = True
-                                , aarWinner = Just "ai"
-                                }
-                        else do
-                            -- Game continues
-                            status status200
-                            json $ AIAttackResponse
+                            json $ object
+                                [ "aarPlayerResult" .= makeAttackResult (aaPosition req) playerResult
+                                , "aarAiResult" .= Null  -- No AI attack
+                                , "aarGameOver" .= False
+                                , "aarWinner" .= Null
+                                ]
+
                                 { aarPlayerResult = makeAttackResult (aaPosition req) playerResult
                                 , aarAiResult = makeAttackResult aiMove aiResult
                                 , aarGameOver = False

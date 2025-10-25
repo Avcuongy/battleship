@@ -95,8 +95,23 @@ function displayPlayerInfo() {
  * Initialize both boards
  */
 function initBoards() {
-  // Render player board (shows ships - will be updated by attack results)
+  // Render player board (shows ships)
   Board.render('playerBoard', true);
+  
+  // Load and display player's fleet on their board
+  const fleetData = Storage.getFleet();
+  if (fleetData && fleetData.length > 0) {
+    gameState.playerFleet = fleetData;
+    
+    // Display each ship on player board
+    fleetData.forEach(ship => {
+      Board.placeShip('playerBoard', ship);
+    });
+    
+    console.log('Player fleet displayed:', fleetData);
+  } else {
+    console.warn('No fleet data found in storage');
+  }
   
   // Render enemy board (hides ships)
   Board.render('enemyBoard', false);
@@ -283,21 +298,72 @@ function handleGameOver(winner) {
   const won = (winner === 'player');
   Storage.updateStats(won);
   
-  // Show result
-  const message = won 
-    ? 'Bạn đã thắng !' 
-    : 'AI đã thắng !';
+  // Show game over modal
+  showGameOverModal(won);
+}
+
+/**
+ * Show game over modal with result
+ * @param {boolean} won - true if player won, false if lost
+ */
+function showGameOverModal(won) {
+  const modal = document.getElementById('gameOverModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalMessage = document.getElementById('modalMessage');
+  const modalPlayerName = document.getElementById('modalPlayerName');
+  const playAgainBtn = document.getElementById('playAgainBtn');
+  const homeBtn = document.getElementById('homeBtn');
   
-  setTimeout(() => {
-    if (confirm(`${message}\n\nPlay Again`)) {
-      // Clear game ID and restart
+  if (!modal) {
+    console.error('Game over modal not found');
+    // Fallback to old confirm dialog
+    setTimeout(() => {
+      const message = won ? 'Bạn đã thắng!' : 'AI đã thắng!';
+      if (confirm(`${message}\n\nChơi lại?`)) {
+        Storage.clearGameId();
+        window.location.href = './setup.html';
+      } else {
+        Storage.clearGameId();
+        window.location.href = '../home.html';
+      }
+    }, 1000);
+    return;
+  }
+  
+  // Set modal content
+  if (modalTitle) {
+    modalTitle.textContent = won ? 'CHIẾN THẮNG!' : 'THUA CUỘC!';
+    modalTitle.style.color = won ? '#4caf50' : '#f44336';
+  }
+  
+  if (modalMessage) {
+    modalMessage.textContent = won 
+      ? 'Chúc mừng! Bạn đã đánh bại AI!' 
+      : 'AI đã chiến thắng! Cố gắng lần sau nhé!';
+  }
+  
+  if (modalPlayerName) {
+    modalPlayerName.textContent = gameState.playerName;
+  }
+  
+  // Setup button handlers
+  if (playAgainBtn) {
+    playAgainBtn.onclick = () => {
       Storage.clearGameId();
       window.location.href = './setup.html';
-    } else {
-      // Return to home
+    };
+  }
+  
+  if (homeBtn) {
+    homeBtn.onclick = () => {
       Storage.clearGameId();
       window.location.href = '../home.html';
-    }
+    };
+  }
+  
+  // Show modal after a short delay
+  setTimeout(() => {
+    modal.style.display = 'flex';
   }, 1000);
 }
 

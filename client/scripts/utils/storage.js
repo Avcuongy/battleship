@@ -10,7 +10,8 @@ const Storage = {
         PLAYER_NAME: 'battleship_playerName',
         ROOM_ID: 'battleship_roomId',
         GAME_ID: 'battleship_gameId',
-        PLAYER_STATS: 'battleship_stats'
+        PLAYER_STATS: 'battleship_stats',
+        FLEET: 'battleship_fleet'
     },
 
     // ============================================================================
@@ -224,6 +225,41 @@ const Storage = {
     // ============================================================================
     // Utilities
     // ============================================================================
+
+    /**
+     * Save fleet data (array of ships)
+     * @param {Array} fleet - Array of ship objects
+     */
+    saveFleet(fleet) {
+        try {
+            localStorage.setItem(this.KEYS.FLEET, JSON.stringify(fleet));
+            console.log('Saved fleet:', fleet);
+        } catch (error) {
+            console.error('Error saving fleet:', error);
+        }
+    },
+
+    /**
+     * Get fleet data
+     * @returns {Array|null}
+     */
+    getFleet() {
+        try {
+            const data = localStorage.getItem(this.KEYS.FLEET);
+            return data ? JSON.parse(data) : null;
+        } catch (error) {
+            console.error('Error getting fleet:', error);
+            return null;
+        }
+    },
+
+    /**
+     * Clear fleet data
+     */
+    clearFleet() {
+        localStorage.removeItem(this.KEYS.FLEET);
+        console.log('Cleared fleet');
+    },
 
     /**
      * Clear all game data (logout/reset)

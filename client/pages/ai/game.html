@@ -43,6 +43,19 @@
       </div>
     </div>
 
+    <!-- Game Over Modal -->
+    <div class="modal-overlay" id="gameOverModal" style="display: none;">
+      <div class="modal-content">
+        <h2 class="modal-title" id="modalTitle">GAME OVER</h2>
+        <div class="modal-message" id="modalMessage">You Win!</div>
+        <div class="modal-player-name" id="modalPlayerName"></div>
+        <div class="modal-buttons">
+          <button class="modal-btn primary" id="playAgainBtn">CHƠI LẠI</button>
+          <button class="modal-btn secondary" id="homeBtn">VỀ TRANG CHỦ</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Audio -->
     <audio
       id="fireSound"
@@ -53,10 +66,10 @@
     <!-- Load utilities first -->
     <script src="../../scripts/utils/storage.js"></script>
     <script src="../../scripts/utils/api.js"></script>
-    
+
     <!-- Load shared components -->
     <script src="../../scripts/shared/board.js"></script>
-    
+
     <!-- Load page script -->
     <script src="../../scripts/ai/game.js"></script>
   </body>

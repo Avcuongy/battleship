@@ -115,6 +115,9 @@ async function handleReady() {
     // Save game ID to storage
     Storage.saveGameId(response.asrGameId);
     
+    // Save fleet to storage (for display in game page)
+    Storage.saveFleet(fleet);
+    
     // Navigate to game page
     window.location.href = './game.html';
     
