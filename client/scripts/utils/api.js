@@ -70,6 +70,15 @@ const API = {
     // ============================================================================
 
     /**
+     * Generate unique player ID from backend
+     * @returns {Promise<string|null>} Player ID (6 chars) or null on error
+     */
+    async generatePlayerId() {
+        const response = await this.get('/api/players/generate-id');
+        return response ? response.gpiPlayerId : null;
+    },
+
+    /**
      * Create new room
      * @param {string} playerId - Player ID (6 chars)
      * @param {string} playerName - Player name

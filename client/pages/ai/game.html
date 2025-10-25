@@ -50,9 +50,14 @@
       preload="auto"
     ></audio>
 
-    <!-- Load utilities and page script -->
+    <!-- Load utilities first -->
+    <script src="../../scripts/utils/storage.js"></script>
     <script src="../../scripts/utils/api.js"></script>
-    <script src="../../scripts/utils/session.js"></script>
+    
+    <!-- Load shared components -->
+    <script src="../../scripts/shared/board.js"></script>
+    
+    <!-- Load page script -->
     <script src="../../scripts/ai/game.js"></script>
   </body>
 </html>

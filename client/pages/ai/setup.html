@@ -32,8 +32,13 @@
       <div class="game-area">
         <!-- Instructions Left -->
         <div class="instructions-left">
-          <div class="instruction-title">ĐẶT TÀU</div>
-          <div class="instruction-text">Chuột trái để đặt</div>
+          <div class="instruction-title">CÁCH ĐẶT TÀU</div>
+          <div class="instruction-text">1. Click vào tàu để chọn</div>
+          <div class="instruction-text">2. Di chuột trên bảng</div>
+          <div class="instruction-text">3. Chuột phải để xoay</div>
+          <div class="instruction-text">4. Chuột trái để đặt</div>
+          <!-- Placement error message -->
+          <div id="placementError" style="display: none; color: #ff5252; margin-top: 10px; font-size: 12px;"></div>
         </div>
 
         <!-- Main Setup Content -->
@@ -48,7 +53,7 @@
           <!-- Right side - Ships and Buttons -->
           <div class="right-section">
             <!-- Ships list -->
-            <div class="ships-section">
+            <div class="ships-section" id="shipsSection">
               <!-- Carrier - 5 cells -->
               <div class="ship-item" data-size="5" data-name="carrier">
                 <div class="ship-cell"></div>
@@ -99,15 +104,25 @@
 
         <!-- Instructions Right -->
         <div class="instructions-right">
-          <div class="instruction-title">XOAY TÀU</div>
-          <div class="instruction-text">Chuột phải để xoay</div>
+          <div class="instruction-title">HƯỚNG TÀU</div>
+          <div class="instruction-text">Chuột phải hoặc phím R</div>
+          <div class="instruction-text orientation-display">
+            <span id="orientationText">Horizontal</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Load utilities and page script -->
+    <!-- Load utilities first -->
+    <script src="../../scripts/utils/storage.js"></script>
     <script src="../../scripts/utils/api.js"></script>
-    <script src="../../scripts/utils/session.js"></script>
+    <script src="../../scripts/utils/validation.js"></script>
+    
+    <!-- Load shared components -->
+    <script src="../../scripts/shared/board.js"></script>
+    <script src="../../scripts/shared/ships.js"></script>
+    
+    <!-- Load page script -->
     <script src="../../scripts/ai/setup.js"></script>
   </body>
 </html>

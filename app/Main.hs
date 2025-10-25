@@ -34,4 +34,4 @@ main = do
     putStrLn "BattleShip server starting..."
     putStrLn " HTTP API: http://localhost:3000"
     putStrLn " WebSocket: ws://localhost:9160"
-    scotty 3000 $ Routes.setupRoutes roomMgr aiMgr
+    scotty 3000 $ Routes.setupRoutes roomMgr aiMgr playerMgr

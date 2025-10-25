@@ -39,30 +39,10 @@ function setupTutorialPagination() {
   });
 }
 
-async function loginPlayer(nickname) {
-  const response = await fetch("http://localhost:3000/api/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ loginName: nickname }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
-  }
-
-  const data = await response.json();
-  if (!data.success) {
-    throw new Error(data.message || "Login failed");
-  }
-
-  // Map API response to SessionManager format
-  return {
-    playerId: data.playerId,
-    name: data.playerName || nickname,
-    stats: {} // Default empty stats
-  };
-}
-
+/**
+ * Validate nickname input
+ * Rules: 2-30 characters, alphanumeric + underscore + hyphen only
+ */
 function validateNickname(nickname) {
   if (!nickname || nickname.length < 2) {
     return { valid: false, message: "Biệt danh phải có ít nhất 2 ký tự" };
@@ -76,6 +56,9 @@ function validateNickname(nickname) {
   return { valid: true };
 }
 
+/**
+ * Update input visual feedback based on validation
+ */
 function updateInputFeedback(input, nickname) {
   input.style.borderColor = "";
   if (nickname && !/^[a-zA-Z0-9_-]*$/.test(nickname)) {
@@ -87,6 +70,10 @@ function updateInputFeedback(input, nickname) {
   }
 }
 
+/**
+ * Handle login form submission
+ * Creates local player data and saves to Storage
+ */
 async function handleLogin(e) {
   e.preventDefault();
 
@@ -94,6 +81,7 @@ async function handleLogin(e) {
   const button = document.getElementById("startButton");
   const nickname = input.value.trim();
 
+  // Validate nickname
   const validation = validateNickname(nickname);
   if (!validation.valid) {
     alert(validation.message);
@@ -101,20 +89,28 @@ async function handleLogin(e) {
     return;
   }
 
+  // Disable button during processing
   button.disabled = true;
-  button.textContent = "Đang đăng nhập...";
+  button.textContent = "Đang xử lý...";
 
   try {
-    const player = await loginPlayer(nickname);
+    // Generate player ID from backend (ensures uniqueness)
+    const playerId = await API.generatePlayerId();
     
-    // Use SessionManager to save session properly
-    SessionManager.saveSession(player);
+    if (!playerId) {
+      throw new Error("Không thể tạo ID người chơi. Vui lòng thử lại!");
+    }
     
-    console.log("Login success:", player);
+    // Save to Storage utility (replaces direct localStorage calls)
+    Storage.savePlayer(playerId, nickname);
+    
+    console.log("Player created:", { playerId, playerName: nickname });
+    
+    // Navigate to home page
     window.location.href = "./home.html";
   } catch (error) {
-    console.error("Login error:", error);
-    alert(`Không thể đăng nhập!\n\nLỗi: ${error.message}\n\nKiểm tra server tại http://localhost:3000`);
+    console.error("Error creating player:", error);
+    alert(`Có lỗi xảy ra: ${error.message}`);
     button.disabled = false;
     button.textContent = "BẮT ĐẦU";
   }
@@ -125,25 +121,37 @@ async function handleLogin(e) {
 // ============================================================
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Initialize tutorial display
   updateTutorial();
   updatePagination();
   setupTutorialPagination();
 
+  // Get DOM elements
   const button = document.getElementById("startButton");
   const input = document.getElementById("nicknameInput");
 
+  // Initial button state
   button.disabled = true;
   button.style.opacity = "0.6";
 
+  // Event listeners
   button.addEventListener("click", handleLogin);
-  input.addEventListener("keypress", (e) => e.key === "Enter" && button.click());
+  
+  input.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      button.click();
+    }
+  });
+  
   input.addEventListener("input", (e) => {
     const nickname = e.target.value.trim();
     updateInputFeedback(input, nickname);
+    
     const isValid = validateNickname(nickname).valid;
     button.disabled = !isValid;
     button.style.opacity = isValid ? "1" : "0.6";
   });
 
+  // Auto-focus input
   input.focus();
 });

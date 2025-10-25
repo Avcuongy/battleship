@@ -7,6 +7,7 @@ module API.Handlers
     , startAIHandler
     , processAIAttackHandler
     , savePlayerHandler
+    , generatePlayerIdHandler
     ) where
 
 import Control.Concurrent.STM (atomically)
@@ -230,6 +231,15 @@ savePlayerHandler req = do
     
     status status200
     json $ SavePlayerResponse { sprStatus = "success" }
+
+-- GET /api/players/generate-id
+generatePlayerIdHandler :: PlayerMgr.PlayerManager -> ActionM ()
+generatePlayerIdHandler playerMgr = do
+    -- Generate unique player ID using backend logic
+    newPlayerId <- liftIO $ PlayerMgr.generateUniquePlayerId playerMgr
+    
+    status status200
+    json $ GeneratePlayerIdResponse { gpiPlayerId = newPlayerId }
 
 -- ============================================================================
 -- Helper Functions

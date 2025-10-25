@@ -9,10 +9,11 @@ import Network.Wai.Middleware.Static (staticPolicy, addBase, noDots, (>->))
 import qualified API.Handlers as Handlers
 import qualified State.Manager.Room as RoomMgr
 import qualified State.Manager.AI as AIMgr
+import qualified State.Manager.Player as PlayerMgr
 
 -- Setup all Scotty routes
-setupRoutes :: RoomMgr.RoomManager -> AIMgr.AIManager -> ScottyM ()
-setupRoutes roomMgr aiMgr = do
+setupRoutes :: RoomMgr.RoomManager -> AIMgr.AIManager -> PlayerMgr.PlayerManager -> ScottyM ()
+setupRoutes roomMgr aiMgr playerMgr = do
     -- Serve static files from client/ directory
     middleware $ staticPolicy (noDots >-> addBase "client")
     
@@ -61,6 +62,11 @@ setupRoutes roomMgr aiMgr = do
     -- ========================================================================
     -- Player Stats Route
     -- ========================================================================
+    
+    -- GET /api/players/generate-id
+    -- Response: {"gpiPlayerId": "A3X7K9"}
+    get "/api/players/generate-id" $ do
+        Handlers.generatePlayerIdHandler playerMgr
     
     -- POST /api/players/save
     -- Body: {"spPlayerId": "abc123", "spPlayerName": "Player1", "spGamesPlayed": 15, "spWins": 8, "spLosses": 7}

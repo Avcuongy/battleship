@@ -16,6 +16,7 @@ module API.Types
     , AIStartResponse(..)
     , AIAttackResponse(..)
     , SavePlayerResponse(..)
+    , GeneratePlayerIdResponse(..)
     , ErrorResponse(..)
     
     -- Common types
@@ -147,6 +148,14 @@ data SavePlayerResponse = SavePlayerResponse
 
 instance FromJSON SavePlayerResponse
 instance ToJSON SavePlayerResponse
+
+-- Response: GET /api/players/generate-id
+data GeneratePlayerIdResponse = GeneratePlayerIdResponse
+    { gpiPlayerId :: Text  -- Generated unique player ID (6 chars)
+    } deriving (Show, Generic)
+
+instance FromJSON GeneratePlayerIdResponse
+instance ToJSON GeneratePlayerIdResponse
 
 -- Generic error response
 data ErrorResponse = ErrorResponse
