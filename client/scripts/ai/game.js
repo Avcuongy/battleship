@@ -1,8 +1,14 @@
 /**
  * AI Game Page
  * Handle attack gameplay against AI
- * Calls: POST /api/ai/attack
+ * Pure client-side game logic with AIEngine
  */
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const TURN_TIME_LIMIT = 20; // 20 seconds per turn
 
 // ============================================================================
 // State Management
@@ -16,8 +22,13 @@ let gameState = {
   isPlayerTurn: true,
   isGameOver: false,
   playerHits: 0,
-  aiHits: 0
+  aiHits: 0,
+  attackCount: 0
 };
+
+// Timer state
+let turnTimer = null;
+let remainingTime = TURN_TIME_LIMIT;
 
 // ============================================================================
 // Initialization
@@ -25,49 +36,148 @@ let gameState = {
 
 /**
  * Initialize game page
+ * Load saved state from backend and setup boards
  */
 function initGamePage() {
-  console.log('Initializing AI game page...');
+  console.log('=== Initializing AI game page ===');
   
-  // Load game data
-  if (!loadGameData()) return;
+  try {
+    // Step 1: Load game data from localStorage
+    if (!loadGameData()) {
+      console.error('Failed to load game data');
+      return;
+    }
+    
+    // Step 2: Convert fleet format for AIEngine
+    console.log('→ Converting player fleet...');
+    const convertedFleet = convertFleetToAIFormat(gameState.playerFleet);
+    if (convertedFleet.length === 0) {
+      console.error('Fleet conversion failed');
+      window.location.href = './setup.html';
+      return;
+    }
+    console.log('✓ Fleet converted:', convertedFleet);
+    
+    // Step 3: Initialize AI engine
+    console.log('→ Initializing AI Engine...');
+    if (typeof AIEngine === 'undefined') {
+      console.error('AIEngine not loaded');
+      window.location.href = './setup.html';
+      return;
+    }
+    AIEngine.initGame(convertedFleet);
+    console.log('✓ AI Engine initialized');
+    
+    // Step 4: Display player info in UI
+    displayPlayerInfo();
+    
+    // Step 5: Initialize and render boards
+    initBoards();
+    
+    // Step 6: Start timer (continuous countdown)
+    startTurnTimer();
+    
+    console.log('✓ AI game initialized successfully');
+    console.log('Game State:', gameState);
+    
+  } catch (error) {
+    console.error('Fatal error initializing game:', error);
+    window.location.href = './setup.html';
+  }
+}
+
+/**
+ * Convert fleet from setup format to AIEngine format
+ * Setup format: {shipType, shipPosition: {posRow, posCol}, shipOrientation, shipHits}
+ * AIEngine format: {shipType, size, positions: [{posRow, posCol}, ...]}
+ */
+function convertFleetToAIFormat(fleet) {
+  const SHIP_SIZES = {
+    'Carrier': 5,
+    'Battleship': 4,
+    'Cruiser': 3,
+    'Submarine': 3,
+    'Destroyer': 2
+  };
   
-  // Display player info
-  displayPlayerInfo();
+  if (!fleet || !Array.isArray(fleet)) {
+    console.error('Invalid fleet format');
+    return [];
+  }
   
-  // Initialize boards
-  initBoards();
-  
-  // Start game (player's turn)
-  startPlayerTurn();
-  
-  console.log('AI game initialized');
+  return fleet.map(ship => {
+    if (!ship.shipType || !ship.shipPosition || !ship.shipOrientation) {
+      console.error('Invalid ship data:', ship);
+      return null;
+    }
+    
+    const size = SHIP_SIZES[ship.shipType];
+    if (!size) {
+      console.error('Unknown ship type:', ship.shipType);
+      return null;
+    }
+    
+    const positions = [];
+    
+    // Calculate all positions based on orientation
+    for (let i = 0; i < size; i++) {
+      if (ship.shipOrientation === 'Horizontal') {
+        positions.push({
+          posRow: ship.shipPosition.posRow,
+          posCol: ship.shipPosition.posCol + i
+        });
+      } else {
+        positions.push({
+          posRow: ship.shipPosition.posRow + i,
+          posCol: ship.shipPosition.posCol
+        });
+      }
+    }
+    
+    return {
+      shipType: ship.shipType,
+      size: size,
+      positions: positions
+    };
+  }).filter(ship => ship !== null);
 }
 
 /**
  * Load game data from storage
  */
 function loadGameData() {
+  console.log('Loading game data from localStorage...');
+  
   // Get game ID
-  gameState.gameId = Storage.getGameId();
+  gameState.gameId = GameStorage.getGameId();
   if (!gameState.gameId) {
-    console.error('No game ID found, redirecting to setup');
+    console.error('No game ID found');
     window.location.href = './setup.html';
     return false;
   }
+  console.log('Game ID loaded:', gameState.gameId);
 
   // Get player data
-  const player = Storage.getPlayer();
+  const player = GameStorage.getPlayer();
   if (!player.playerId || !player.playerName) {
-    console.error('No player data found, redirecting to home');
+    console.error('No player data found');
     window.location.href = '../home.html';
     return false;
   }
-
   gameState.playerId = player.playerId;
   gameState.playerName = player.playerName;
+  console.log('Player data loaded:', player);
 
-  console.log('Game data loaded:', gameState);
+  // Get fleet
+  const fleet = GameStorage.getFleet();
+  if (!fleet || fleet.length !== 5) {
+    console.error('Invalid fleet in storage:', fleet);
+    window.location.href = './setup.html';
+    return false;
+  }
+  gameState.playerFleet = fleet;
+  console.log('Fleet loaded:', fleet);
+
   return true;
 }
 
@@ -78,13 +188,15 @@ function displayPlayerInfo() {
   const player1Name = document.getElementById('player1Name');
   const player2Name = document.getElementById('player2Name');
   
-  if (player1Name) {
-    player1Name.textContent = gameState.playerName;
+  if (!player1Name || !player2Name) {
+    console.error('Player name elements not found');
+    return;
   }
   
-  if (player2Name) {
-    player2Name.textContent = 'AI';
-  }
+  player1Name.textContent = gameState.playerName;
+  player2Name.textContent = 'AI';
+  
+  console.log('Player info displayed on UI');
 }
 
 // ============================================================================
@@ -93,66 +205,135 @@ function displayPlayerInfo() {
 
 /**
  * Initialize both boards
+ * Left board: Player's ships (visible)
+ * Right board: Enemy/AI ships (hidden)
  */
 function initBoards() {
-  // Render player board (shows ships)
-  Board.render('playerBoard', true);
+  console.log('Initializing game boards...');
   
-  // Load and display player's fleet on their board
-  const fleetData = Storage.getFleet();
-  if (fleetData && fleetData.length > 0) {
-    gameState.playerFleet = fleetData;
-    
-    // Display each ship on player board
-    fleetData.forEach(ship => {
-      Board.placeShip('playerBoard', ship);
-    });
-    
-    console.log('Player fleet displayed:', fleetData);
-  } else {
-    console.warn('No fleet data found in storage');
+  // Validate board elements exist
+  const playerBoardElement = document.getElementById('playerBoard');
+  const enemyBoardElement = document.getElementById('enemyBoard');
+  
+  if (!playerBoardElement || !enemyBoardElement) {
+    console.error('Board elements not found');
+    return;
   }
   
-  // Render enemy board (hides ships)
+  // Render player board (with ships visible)
+  Board.render('playerBoard', true);
+  console.log('✓ Player board rendered');
+  
+  // Display player's fleet on their board
+  if (gameState.playerFleet && gameState.playerFleet.length === 5) {
+    gameState.playerFleet.forEach((ship, index) => {
+      try {
+        Board.placeShip('playerBoard', ship);
+        console.log(`Ship ${index + 1}/5 placed:`, ship);
+      } catch (error) {
+        console.error(`Error placing ship ${index + 1}:`, error);
+      }
+    });
+    console.log('All player ships displayed');
+  } else {
+    console.error('Invalid fleet data');
+  }
+  
+  // Render enemy board (AI ships hidden)
   Board.render('enemyBoard', false);
+  console.log('Enemy board rendered (AI ships hidden)');
   
-  console.log('Boards initialized');
+  console.log('Boards initialization complete');
 }
 
 // ============================================================================
-// Turn Management
+// Timer Management (Continuous Countdown - NO RESET on HIT)
 // ============================================================================
 
 /**
- * Start player's turn
+ * Start turn timer - 20 second continuous countdown
+ * Timer does NOT reset when player hits
+ * Timer only resets on: MISS or TIME EXPIRED
  */
-function startPlayerTurn() {
-  console.log("Player's turn started");
+function startTurnTimer() {
+  console.log('→ Starting turn timer (20s continuous countdown)');
   
-  gameState.isPlayerTurn = true;
+  // Clear any existing timer
+  stopTurnTimer();
   
-  // Update UI
-  updateTurnIndicator(true);
+  // Reset to 20 seconds
+  remainingTime = TURN_TIME_LIMIT;
+  updateTimerDisplay();
   
-  // Enable attacks on enemy board
-  Board.enableAttacks('enemyBoard', handlePlayerAttack);
+  // Start countdown (1 second interval)
+  turnTimer = setInterval(() => {
+    remainingTime--;
+    updateTimerDisplay();
+    
+    // Time expired - end turn
+    if (remainingTime <= 0) {
+      console.log('⏰ Time expired!');
+      handleTimeExpired();
+    }
+  }, 1000);
+  
+  console.log('✓ Timer started');
 }
 
 /**
- * Start AI's turn (wait for response from attack API)
+ * Stop turn timer
  */
-function startAITurn() {
-  console.log("AI's turn started");
+function stopTurnTimer() {
+  if (turnTimer) {
+    clearInterval(turnTimer);
+    turnTimer = null;
+    console.log('⏸ Timer stopped');
+  }
+}
+
+/**
+ * Update timer display in UI
+ */
+function updateTimerDisplay() {
+  const timerEl = document.getElementById('timer');
+  if (!timerEl) {
+    console.error('Timer element not found');
+    return;
+  }
   
-  gameState.isPlayerTurn = false;
+  timerEl.textContent = `${remainingTime}s`;
   
-  // Update UI
-  updateTurnIndicator(false);
+  // Color warning when time is low
+  if (remainingTime <= 5) {
+    timerEl.style.color = '#ff1744'; // Red
+  } else if (remainingTime <= 10) {
+    timerEl.style.color = '#ff9800'; // Orange
+  } else {
+    timerEl.style.color = '#4caf50'; // Green
+  }
+}
+
+/**
+ * Handle time expired - end player's turn
+ */
+function handleTimeExpired() {
+  console.log('⏰ Time expired - ending turn');
+  
+  stopTurnTimer();
   
   // Disable attacks
-  Board.disableAttacks('enemyBoard');
+  // Board.disableAttacks('enemyBoard');
   
-  // AI attack is handled in the attack response (aarAiResult)
+  // Update turn indicator
+  updateTurnIndicator(false);
+  
+  // TODO: AI counter-attack logic here
+  // For now, just restart timer after delay
+  setTimeout(() => {
+    console.log('→ Restarting turn after timeout');
+    updateTurnIndicator(true);
+    startTurnTimer();
+  }, 2000);
 }
 
 /**
@@ -162,246 +343,44 @@ function startAITurn() {
 function updateTurnIndicator(isPlayerTurn) {
   const turnIndicator = document.getElementById('turnIndicator');
   
-  if (turnIndicator) {
-    if (isPlayerTurn) {
-      turnIndicator.textContent = 'Your Turn';
-      turnIndicator.className = 'turn-indicator your';
-    } else {
-      turnIndicator.textContent = "AI's Turn";
-      turnIndicator.className = 'turn-indicator opponent';
-    }
-  }
-}
-
-// ============================================================================
-// Attack Handling
-// ============================================================================
-
-/**
- * Handle player attack on enemy board
- * @param {{posRow: number, posCol: number}} position
- */
-async function handlePlayerAttack(position) {
-  console.log('Player attacking:', position);
-  
-  // Disable further attacks during processing
-  Board.disableAttacks('enemyBoard');
-  
-  try {
-    // Call API
-    const response = await API.attackAI(gameState.gameId, position);
-    
-    if (!response) {
-      throw new Error('No response from server');
-    }
-
-    console.log('Attack response:', response);
-    
-    // Process player's attack result
-    processPlayerAttackResult(response.aarPlayerResult);
-    
-    // Check game over
-    if (response.aarGameOver) {
-      handleGameOver(response.aarWinner);
-      return;
-    }
-
-    // Process AI's counter-attack
-    if (response.aarAiResult) {
-      setTimeout(() => {
-        processAIAttackResult(response.aarAiResult);
-        
-        // Back to player's turn
-        setTimeout(() => {
-          startPlayerTurn();
-        }, 1000);
-      }, 1500);
-    } else {
-      // Player hit - continue player's turn
-      startPlayerTurn();
-    }
-    
-  } catch (error) {
-    console.error('Attack error:', error);
-    alert(`Lỗi tấn công: ${error.message}`);
-    
-    // Re-enable attacks
-    startPlayerTurn();
-  }
-}
-
-/**
- * Process player's attack result
- * @param {object} result - {arPosition, arResult: "hit"|"miss"|"sunk", arShipType?}
- */
-function processPlayerAttackResult(result) {
-  console.log('Player attack result:', result);
-  
-  const position = result.arPosition;
-  
-  if (result.arResult === 'hit' || result.arResult === 'sunk') {
-    Board.markHit('enemyBoard', position);
-    gameState.playerHits++;
-    
-    if (result.arResult === 'sunk') {
-      showMessage(`You sunk AI's ${result.arShipType}!`, 'success');
-    } else {
-      showMessage('Hit!', 'success');
-    }
-  } else {
-    Board.markMiss('enemyBoard', position);
-    showMessage('Miss!', 'info');
-  }
-}
-
-/**
- * Process AI's attack result
- * @param {object} result - {arPosition, arResult: "hit"|"miss"|"sunk", arShipType?}
- */
-function processAIAttackResult(result) {
-  console.log('AI attack result:', result);
-  
-  const position = result.arPosition;
-  
-  if (result.arResult === 'hit' || result.arResult === 'sunk') {
-    Board.markHit('playerBoard', position);
-    gameState.aiHits++;
-    
-    if (result.arResult === 'sunk') {
-      showMessage(`AI sunk your ${result.arShipType}!`, 'danger');
-    } else {
-      showMessage('AI hit your ship!', 'warning');
-    }
-  } else {
-    Board.markMiss('playerBoard', position);
-    showMessage('AI missed!', 'info');
-  }
-}
-
-// ============================================================================
-// Game Over
-// ============================================================================
-
-/**
- * Handle game over
- * @param {string} winner - "player" or "ai"
- */
-function handleGameOver(winner) {
-  console.log('Game over! Winner:', winner);
-  
-  gameState.isGameOver = true;
-  
-  // Disable attacks
-  Board.disableAttacks('enemyBoard');
-  
-  // Update stats
-  const won = (winner === 'player');
-  Storage.updateStats(won);
-  
-  // Show game over modal
-  showGameOverModal(won);
-}
-
-/**
- * Show game over modal with result
- * @param {boolean} won - true if player won, false if lost
- */
-function showGameOverModal(won) {
-  const modal = document.getElementById('gameOverModal');
-  const modalTitle = document.getElementById('modalTitle');
-  const modalMessage = document.getElementById('modalMessage');
-  const modalPlayerName = document.getElementById('modalPlayerName');
-  const playAgainBtn = document.getElementById('playAgainBtn');
-  const homeBtn = document.getElementById('homeBtn');
-  
-  if (!modal) {
-    console.error('Game over modal not found');
-    // Fallback to old confirm dialog
-    setTimeout(() => {
-      const message = won ? 'Bạn đã thắng!' : 'AI đã thắng!';
-      if (confirm(`${message}\n\nChơi lại?`)) {
-        Storage.clearGameId();
-        window.location.href = './setup.html';
-      } else {
-        Storage.clearGameId();
-        window.location.href = '../home.html';
-      }
-    }, 1000);
+  if (!turnIndicator) {
+    console.error('Turn indicator element not found');
     return;
   }
   
-  // Set modal content
-  if (modalTitle) {
-    modalTitle.textContent = won ? 'CHIẾN THẮNG!' : 'THUA CUỘC!';
-    modalTitle.style.color = won ? '#4caf50' : '#f44336';
-  }
-  
-  if (modalMessage) {
-    modalMessage.textContent = won 
-      ? 'Chúc mừng! Bạn đã đánh bại AI!' 
-      : 'AI đã chiến thắng! Cố gắng lần sau nhé!';
-  }
-  
-  if (modalPlayerName) {
-    modalPlayerName.textContent = gameState.playerName;
-  }
-  
-  // Setup button handlers
-  if (playAgainBtn) {
-    playAgainBtn.onclick = () => {
-      Storage.clearGameId();
-      window.location.href = './setup.html';
-    };
-  }
-  
-  if (homeBtn) {
-    homeBtn.onclick = () => {
-      Storage.clearGameId();
-      window.location.href = '../home.html';
-    };
-  }
-  
-  // Show modal after a short delay
-  setTimeout(() => {
-    modal.style.display = 'flex';
-  }, 1000);
-}
-
-// ============================================================================
-// UI Helpers
-// ============================================================================
-
-/**
- * Show temporary message
- * @param {string} message
- * @param {string} type - 'success', 'warning', 'danger', 'info'
- */
-function showMessage(message, type = 'info') {
-  console.log(`[${type.toUpperCase()}] ${message}`);
-  
-  // Optional: Show in UI (can create a message div)
-  const messageDiv = document.getElementById('gameMessage');
-  if (messageDiv) {
-    messageDiv.textContent = message;
-    messageDiv.className = `game-message ${type}`;
-    messageDiv.style.display = 'block';
-    
-    setTimeout(() => {
-      messageDiv.style.display = 'none';
-    }, 2000);
+  if (isPlayerTurn) {
+    turnIndicator.textContent = 'Your Turn';
+    turnIndicator.className = 'turn-indicator your';
+  } else {
+    turnIndicator.textContent = "AI's Turn";
+    turnIndicator.className = 'turn-indicator opponent';
   }
 }
 
 // ============================================================================
-// Entry Point
+// Game Entry Point
 // ============================================================================
 
-document.addEventListener('DOMContentLoaded', initGamePage);
+console.log('=== AI Game Script Loaded ===');
+console.log('GameStorage:', typeof GameStorage);
+console.log('Board:', typeof Board);
+console.log('AIEngine:', typeof AIEngine);
+
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('=== DOMContentLoaded Event Fired ===');
+  try {
+    initGamePage();
+  } catch (error) {
+    console.error('Fatal error in initGamePage:', error);
+    console.error('Stack trace:', error.stack);
+    window.location.href = './setup.html';
+  }
+});
 
 // Cleanup on page unload
 window.addEventListener('beforeunload', () => {
   if (!gameState.isGameOver) {
     // Game was abandoned - count as loss
-    Storage.updateStats(false);
+    GameStorage.updateStats(false);
   }
 });
