@@ -3,7 +3,7 @@
 module Game.AI
     ( -- * AI fleet
       aiDefaultFleet
-    
+  
     -- * AI moves
     , chooseAIMove
     ) where
@@ -18,37 +18,38 @@ import System.Random (randomRIO)
 -- ============================================================================
 
 {-|
-AI ships are ALWAYS placed at these positions:
-  * Destroyer:   A1-A2 (Horizontal)
-  * Submarine:   C3-C5 (Vertical)
-  * Cruiser:     F1-F3 (Horizontal)
-  * Battleship:  H5-H8 (Vertical)
-  * Carrier:     B8-F8 (Horizontal)
+AI ships are ALWAYS placed at these positions (matching client ai-engine.js):
+  * Carrier:     Row 0, Col 0-4 (Horizontal) - A1-A5
+  * Battleship:  Row 2, Col 0-3 (Horizontal) - C1-C4
+  * Cruiser:     Row 4, Col 0-2 (Horizontal) - E1-E3
+  * Submarine:   Row 6, Col 0-2 (Horizontal) - G1-G3
+  * Destroyer:   Row 8, Col 0-1 (Horizontal) - I1-I2
 
-This avoids needing to validate AI placement and simplifies implementation.
+This matches the client-side AIEngine.aiFleet configuration.
 -}
 aiDefaultFleet :: Fleet
 aiDefaultFleet =
-    [ makeShip Destroyer  (Position 0 0) Horizontal  -- A1-A2
-    , makeShip Submarine  (Position 2 2) Vertical    -- C3-C5
-    , makeShip Cruiser    (Position 5 0) Horizontal  -- F1-F3
-    , makeShip Battleship (Position 7 4) Vertical    -- H5-H8
-    , makeShip Carrier    (Position 1 7) Horizontal  -- B8-F8
+    [ makeShip Carrier    (Position 0 0) Horizontal  -- Row 0: A1-A5 (5 cells)
+    , makeShip Battleship (Position 2 0) Horizontal  -- Row 2: C1-C4 (4 cells)
+    , makeShip Cruiser    (Position 4 0) Horizontal  -- Row 4: E1-E3 (3 cells)
+    , makeShip Submarine  (Position 6 0) Horizontal  -- Row 6: G1-G3 (3 cells)
+    , makeShip Destroyer  (Position 8 0) Horizontal  -- Row 8: I1-I2 (2 cells)
     ]
 
--- Visual representation:
---    1 2 3 4 5 6 7 8 9 10
--- A  D D . . . . . . . .
--- B  . . . . . . . C C C C C
--- C  . . S . . . . . . .
--- D  . . S . . . . . . .
--- E  . . S . . . . . . .
--- F  R R R . . . . . . .
--- G  . . . . . . . . . .
--- H  . . . . B . . . . .
--- I  . . . . B . . . . .
--- J  . . . . B . . . . .
---           B
+-- Visual representation (matching client):
+--    0 1 2 3 4 5 6 7 8 9  (Col index)
+-- 0  C C C C C . . . . .  (Row 0 = A)
+-- 1  . . . . . . . . . .  (Row 1 = B)
+-- 2  B B B B . . . . . .  (Row 2 = C)
+-- 3  . . . . . . . . . .  (Row 3 = D)
+-- 4  R R R . . . . . . .  (Row 4 = E)
+-- 5  . . . . . . . . . .  (Row 5 = F)
+-- 6  S S S . . . . . . .  (Row 6 = G)
+-- 7  . . . . . . . . . .  (Row 7 = H)
+-- 8  D D . . . . . . . .  (Row 8 = I)
+-- 9  . . . . . . . . . .  (Row 9 = J)
+--
+-- Legend: C=Carrier, B=Battleship, R=CRuiser, S=Submarine, D=Destroyer
 
 -- ============================================================================
 -- AI Move Selection

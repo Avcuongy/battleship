@@ -18,7 +18,7 @@ main = do
     roomMgr <- RoomMgr.newRoomManager
     playerMgr <- PlayerMgr.newPlayerManager
     aiMgr <- AIMgr.newAIManager
-    
+
     -- Create WebSocket state
     wsConnections <- newTVarIO Map.empty
     let state = WebSocketState
@@ -26,10 +26,10 @@ main = do
             , wsPlayerManager = playerMgr
             , wsConnections = wsConnections
             }
-    
+
     -- Start WebSocket server (thread 1)
     _ <- forkIO $ WSServer.startWebSocketServer state
-    
+
     -- Start Scotty HTTP server (main thread)
     putStrLn "BattleShip server starting..."
     putStrLn "Click: http://localhost:3000/pages/initial.html"
