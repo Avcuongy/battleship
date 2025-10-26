@@ -236,12 +236,6 @@ processAIAttackHandler aiMgr req = do
                                 , "aarWinner" .= Null
                                 ]
 
-                                { aarPlayerResult = makeAttackResult (aaPosition req) playerResult
-                                , aarAiResult = makeAttackResult aiMove aiResult
-                                , aarGameOver = False
-                                , aarWinner = Nothing
-                                }
-
 -- ============================================================================
 -- Player Stats Handler
 -- ============================================================================
