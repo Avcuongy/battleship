@@ -445,3 +445,4 @@ data/
 .hintrc
 __pycache__/
 STRUCTURE.md
+TEST.md

@@ -182,7 +182,7 @@ const Storage = {
      * Update stats after game end
      * @param {boolean} won - true if player won
      */
-    updateStats(won) {
+    async updateStats(won) {
         const stats = this.getStats();
         stats.gamesPlayed += 1;
         if (won) {
@@ -191,6 +191,47 @@ const Storage = {
             stats.losses += 1;
         }
         this.saveStats(stats);
+        
+        // Save to backend server (data/players/)
+        await this.saveStatsToServer();
+    },
+
+    /**
+     * Save stats to backend server (data/players/<playerId>.json)
+     */
+    async saveStatsToServer() {
+        const player = this.getPlayer();
+        const stats = this.getStats();
+
+        if (!player.playerId || !player.playerName) {
+            console.warn('Cannot save stats: missing player data');
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost:3000/api/players/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    spPlayerId: player.playerId,
+                    spPlayerName: player.playerName,
+                    spGamesPlayed: stats.gamesPlayed,
+                    spWins: stats.wins,
+                    spLosses: stats.losses
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('✓ Stats saved to server (data/players/):', result);
+            } else {
+                console.error('✗ Failed to save stats:', response.statusText);
+            }
+        } catch (error) {
+            console.error('✗ Error saving stats to server:', error);
+        }
     },
 
     // ============================================================================
@@ -296,6 +337,9 @@ const Storage = {
 
 // Initialize persistence on load
 Storage.setupPersistence();
+
+// Alias for backward compatibility
+const GameStorage = Storage;
 
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {

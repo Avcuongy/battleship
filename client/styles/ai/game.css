@@ -59,7 +59,7 @@ body {
   letter-spacing: 1px;
 }
 
-/* Center - Turn indicator and timer */
+/* Center - Fire indicator and timer */
 .turn-info-center {
   position: absolute;
   left: 50%;
@@ -70,25 +70,20 @@ body {
   gap: 8px;
 }
 
-.turn-indicator {
-  font-size: 1.8rem;
+.fire-indicator {
+  font-size: 2rem;
   font-weight: bold;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.turn-indicator.enemy {
-  color: #f44336;
-}
-
-.turn-indicator.your {
-  color: #4caf50;
+  color: #2a5298;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
 }
 
 .timer {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #f44336;
+  color: #4caf50;
   font-family: "Courier New", monospace;
   letter-spacing: 2px;
 }

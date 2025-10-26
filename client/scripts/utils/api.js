@@ -15,10 +15,13 @@ const API = {
      * Generic POST request
      * @param {string} endpoint - API endpoint (e.g., '/api/rooms/create')
      * @param {object} data - Request body
-     * @returns {Promise<object|null>} Response JSON or null on error
+     * @returns {Promise<object>} Response JSON
+     * @throws {Error} On network or HTTP error
      */
     async post(endpoint, data) {
         try {
+            console.log(`→ POST ${endpoint}`, data);
+            
             const response = await fetch(`${this.BASE_URL}${endpoint}`, {
                 method: 'POST',
                 headers: {
@@ -27,15 +30,21 @@ const API = {
                 body: JSON.stringify(data)
             });
 
+            console.log(`← Response ${endpoint}: Status ${response.status}`);
+
             if (!response.ok) {
-                console.error(`API Error: ${response.status} ${response.statusText}`);
-                return null; // Silent ignore (per requirements Q26)
+                const errorText = await response.text();
+                console.error(`API Error: ${response.status} ${response.statusText}`, errorText);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
-            return await response.json();
+            const json = await response.json();
+            console.log(`← JSON ${endpoint}:`, json);
+            return json;
+            
         } catch (error) {
             console.error(`API Error (${endpoint}):`, error);
-            return null; // Silent ignore
+            throw error; // Re-throw for caller to handle
         }
     },
 
@@ -154,19 +163,29 @@ const API = {
      * ]
      */
     async startAIGame(playerId, playerName, fleet) {
-        const response = await this.post('/api/ai/start', {
-            aiPlayerId: playerId,
-            aiPlayerName: playerName,
-            aiFleet: fleet
-        });
+        try {
+            const response = await this.post('/api/ai/start', {
+                aiPlayerId: playerId,
+                aiPlayerName: playerName,
+                aiFleet: fleet
+            });
 
-        if (response && response.asrStatus === 'success') {
-            console.log('AI game started:', response.asrGameId);
-            return response;
+            console.log('AI game API response:', response);
+
+            if (response && response.asrStatus === 'success') {
+                console.log('✓ AI game started:', response.asrGameId);
+                return response;
+            }
+
+            // Backend returned error
+            const errorMsg = response?.asrMessage || 'Unknown error from backend';
+            console.error('✗ Backend rejected:', errorMsg);
+            throw new Error(errorMsg);
+            
+        } catch (error) {
+            console.error('✗ Failed to start AI game:', error);
+            throw error; // Re-throw to be handled by caller
         }
-
-        console.error('Failed to start AI game:', response?.asrMessage);
-        return null;
     },
 
     /**
