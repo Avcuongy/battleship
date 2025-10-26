@@ -60,11 +60,8 @@ function init() {
   // Enable enemy board clicks
   enableEnemyBoardClicks();
   
-  // Setup modal buttons
+  // Setup modal button
   document.getElementById('playAgainBtn')?.addEventListener('click', () => {
-    window.location.href = '../home.html';
-  });
-  document.getElementById('homeBtn')?.addEventListener('click', () => {
     window.location.href = '../home.html';
   });
   
@@ -118,7 +115,7 @@ function updateTimer() {
 }
 
 function handleTimeout() {
-  console.log('Timer timeout - treat as MISS');
+  console.log('Timer timeout = treat as MISS');
   stopTimer();
   
   if (gameState.isGameOver) return;
@@ -274,18 +271,15 @@ async function endGame(playerWon) {
   // Show modal
   const modal = document.getElementById('gameOverModal');
   const title = document.getElementById('modalTitle');
-  const message = document.getElementById('modalMessage');
   const playerNameEl = document.getElementById('modalPlayerName');
   
-  if (modal && title && message) {
+  if (modal && title && playerNameEl) {
     if (playerWon) {
-      title.textContent = 'VICTORY!';
-      message.textContent = 'YOU WIN';
+      title.textContent = 'WIN';
       playerNameEl.textContent = gameState.playerName;
       modal.classList.add('win');
     } else {
-      title.textContent = 'DEFEAT';
-      message.textContent = 'AI WINS';
+      title.textContent = 'LOSE';
       playerNameEl.textContent = 'AI';
       modal.classList.add('lose');
     }
