@@ -4,7 +4,7 @@ module API.Routes
     ( setupRoutes
     ) where
 
-import Web.Scotty (ScottyM, post, get, jsonData, param, middleware)
+import Web.Scotty (ScottyM, post, get, jsonData, param, middleware, redirect)
 import Network.Wai.Middleware.Static (staticPolicy, addBase, noDots, (>->))
 import qualified API.Handlers as Handlers
 import qualified State.Manager.Room as RoomMgr
@@ -16,6 +16,9 @@ setupRoutes :: RoomMgr.RoomManager -> AIMgr.AIManager -> PlayerMgr.PlayerManager
 setupRoutes roomMgr aiMgr playerMgr = do
     -- Serve static files from client/ directory
     middleware $ staticPolicy (noDots >-> addBase "client")
+    
+    -- Root path: redirect to initial page for convenience
+    get "/" $ redirect "/pages/initial.html"
     
     -- ========================================================================
     -- Room Routes (1vs1)

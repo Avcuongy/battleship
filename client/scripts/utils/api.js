@@ -5,7 +5,10 @@
  */
 
 const API = {
-    BASE_URL: 'http://localhost:3000',
+    // Use current origin by default so LAN/public access works without edits
+    BASE_URL: (typeof window !== 'undefined' && window.location && window.location.origin)
+        ? window.location.origin
+        : 'http://localhost:3000',
 
     // ============================================================================
     // Core HTTP Methods

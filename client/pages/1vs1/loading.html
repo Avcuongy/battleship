@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Loading</title>
-     <link rel="stylesheet" href="../../styles/1vs1/loading.css" />
+    <title>1 vs 1 — Loading Room</title>
+    <link rel="stylesheet" href="../../styles/1vs1/loading.css" />
   </head>
   <body>
     <div class="game-container">
@@ -17,23 +17,39 @@
 
         <!-- Center Section (2/4) -->
         <div class="center-container">
-          <div class="room-id-display">ROOM ID: AI</div>
+          <div class="room-id-display">
+            ROOM ID: <span id="roomIdText">—</span>
+          </div>
+
+          <div class="join-row">
+            <input
+              id="joinRoomInput"
+              class="join-input"
+              type="text"
+              maxlength="6"
+              placeholder="Nhập ROOM ID để vào"
+            />
+            <button id="joinButton" class="join-button">Connect</button>
+          </div>
+
           <button class="start-button" id="startButton" disabled>
             BẮT ĐẦU
           </button>
         </div>
 
-        <!-- AI Info (1/4 - Right) -->
-        <div class="ai-info-container">
-          <div class="player-name">AI</div>
-          <div class="player-id">ID: AI</div>
+        <!-- Player 2 Info (1/4 - Right) -->
+        <div class="ai-info-container" id="player2Box">
+          <div class="player-name" id="player2Name">—</div>
+          <div class="player-id" id="player2Id">ID: —</div>
         </div>
       </div>
     </div>
-
+    
     <!-- Load utilities and page script -->
     <script src="../../scripts/utils/api.js"></script>
-    <script src="../../scripts/utils/session.js"></script>
-    <script src="../../scripts/ai/loading.js"></script>
+    <script src="../../scripts/utils/storage.js"></script>
+    <script src="../../scripts/websocket/protocol.js"></script>
+    <script src="../../scripts/websocket/client.js"></script>
+    <script src="../../scripts/1vs1/loading.js"></script>
   </body>
 </html>

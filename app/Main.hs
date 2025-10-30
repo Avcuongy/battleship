@@ -32,5 +32,5 @@ main = do
 
     -- Start Scotty HTTP server (main thread)
     putStrLn "BattleShip server starting..."
-    putStrLn "Click: http://localhost:3000/pages/initial.html"
+    putStrLn "Click: http://localhost:3000"
     scotty 3000 $ Routes.setupRoutes roomMgr aiMgr playerMgr

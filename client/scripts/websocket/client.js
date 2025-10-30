@@ -28,7 +28,9 @@ class WebSocketManager {
             this.roomId = roomId;
             this.playerId = playerId;
 
-            const wsUrl = `ws://localhost:9160?roomId=${roomId}&playerId=${playerId}`;
+            const wsProto = (typeof window !== 'undefined' && window.location && window.location.protocol === 'https:') ? 'wss' : 'ws';
+            const wsHost = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : 'localhost';
+            const wsUrl = `${wsProto}://${wsHost}:9160?roomId=${roomId}&playerId=${playerId}`;
             console.log('Connecting to WebSocket:', wsUrl);
 
             try {
@@ -63,7 +65,7 @@ class WebSocketManager {
                 reject(error);
             }
         });
-    },
+    }
 
     /**
      * Disconnect WebSocket
@@ -74,7 +76,7 @@ class WebSocketManager {
             this.ws.close();
             this.ws = null;
         }
-    },
+    }
 
     /**
      * Check if connected
@@ -82,7 +84,7 @@ class WebSocketManager {
      */
     isConnected() {
         return this.ws && this.ws.readyState === WebSocket.OPEN;
-    },
+    }
 
     // ============================================================================
     // Message Handling
@@ -107,7 +109,7 @@ class WebSocketManager {
             console.error('Failed to send message:', error);
             return false;
         }
-    },
+    }
 
     /**
      * Handle incoming message from server
@@ -128,7 +130,7 @@ class WebSocketManager {
         } else {
             console.warn('No handler for message type:', message.type);
         }
-    },
+    }
 
     /**
      * Register message handler
@@ -138,7 +140,7 @@ class WebSocketManager {
     on(messageType, callback) {
         this.messageHandlers[messageType] = callback;
         console.log('Registered handler for:', messageType);
-    },
+    }
 
     /**
      * Unregister message handler
@@ -146,7 +148,7 @@ class WebSocketManager {
      */
     off(messageType) {
         delete this.messageHandlers[messageType];
-    },
+    }
 
     // ============================================================================
     // Disconnect Handling (Per Requirements Q19)
@@ -167,7 +169,7 @@ class WebSocketManager {
             alert('Connection lost. Game ended.');
             window.location.href = '/pages/home.html';
         }
-    },
+    }
 
     // ============================================================================
     // Game Actions (Convenience Methods)
@@ -181,7 +183,7 @@ class WebSocketManager {
     sendReady(fleet) {
         const message = Protocol.buildReadyMessage(this.playerId, fleet);
         return this.send(message);
-    },
+    }
 
     /**
      * Send attack message
