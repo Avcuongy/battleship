@@ -27,20 +27,24 @@ class WebSocketManager {
         return new Promise((resolve, reject) => {
             this.roomId = roomId;
             this.playerId = playerId;
+            this._opened = false;
 
             const wsProto = (typeof window !== 'undefined' && window.location && window.location.protocol === 'https:') ? 'wss' : 'ws';
             const wsHost = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : 'localhost';
-            const wsUrl = `${wsProto}://${wsHost}:9160?roomId=${roomId}&playerId=${playerId}`;
+            // Include explicit '/' before query to ensure server receives '/?roomId=...'
+            const wsUrl = `${wsProto}://${wsHost}:9160/?roomId=${roomId}&playerId=${playerId}`;
             console.log('Connecting to WebSocket:', wsUrl);
 
             try {
                 this.ws = new WebSocket(wsUrl);
+                let settled = false;
 
                 // Connection opened
                 this.ws.onopen = () => {
                     console.log('WebSocket connected');
                     this.reconnectAttempts = 0;
-                    resolve(true);
+                    this._opened = true;
+                    if (!settled) { settled = true; resolve(true); }
                 };
 
                 // Message received
@@ -51,13 +55,20 @@ class WebSocketManager {
                 // Connection closed
                 this.ws.onclose = (event) => {
                     console.log('WebSocket closed:', event.code, event.reason);
-                    this.handleDisconnect();
+                    if (this._opened) {
+                        // Real disconnect after being connected
+                        this.handleDisconnect();
+                    } else {
+                        // Closed before open – treat as connect failure
+                        console.warn('WebSocket closed before opening');
+                        if (!settled) { settled = true; reject(new Error('WebSocket closed before open')); }
+                    }
                 };
 
                 // Error occurred
                 this.ws.onerror = (error) => {
                     console.error('WebSocket error:', error);
-                    reject(error);
+                    if (!settled) { settled = true; reject(error); }
                 };
 
             } catch (error) {

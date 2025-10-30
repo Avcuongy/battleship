@@ -84,7 +84,7 @@ function initLoadingPage() {
     window.location.href = '../home.html';
     return;
   }
-
+  
   // Display player info
   displayPlayerInfo();
   
