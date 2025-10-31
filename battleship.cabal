@@ -9,8 +9,8 @@ version:        0.1.0.0
 synopsis:       Multiplayer Battleship game with Haskell backend
 description:    Please see the README on GitHub
 category:       Game
-homepage:       https://github.com/yourusername/BattleShip#readme
-bug-reports:    https://github.com/yourusername/BattleShip/issues
+homepage:       https://github.com/yourusername/battleship#readme
+bug-reports:    https://github.com/yourusername/battleship/issues
 author:         Your Name
 maintainer:     your.email@example.com
 copyright:      2025 Your Name
@@ -24,7 +24,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/yourusername/BattleShip
+  location: https://github.com/yourusername/battleship
 
 library
   exposed-modules:
