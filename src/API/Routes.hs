@@ -43,6 +43,11 @@ setupRoutes roomMgr aiMgr playerMgr = do
     get "/api/rooms/:id" $ do
         roomId <- param "id"
         Handlers.getRoomHandler roomMgr roomId
+
+    -- GET /api/rooms/active
+    -- Response: {"garStatus": "active"|"none", "garRoomId": "ABC123"|null}
+    get "/api/rooms/active" $ do
+        Handlers.getActiveRoomHandler roomMgr
     
     -- ========================================================================
     -- AI Routes

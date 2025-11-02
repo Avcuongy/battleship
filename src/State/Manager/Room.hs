@@ -34,6 +34,7 @@ module State.Manager.Room
     
     -- * Query operations
     , getRoomPlayerIds
+    , activeRoomId
     ) where
 
 import Control.Concurrent.STM (TVar, newTVarIO, atomically, readTVar, writeTVar)
@@ -289,3 +290,13 @@ getRoomPlayerIds mgr roomId = do
         room <- maybeRoom
         p2 <- player2Id room
         return (player1Id room, p2)
+
+-- | Get the current active room ID, if any (status /= Done)
+activeRoomId :: RoomManager -> IO (Maybe RoomId)
+activeRoomId mgr = do
+    atomically $ do
+        rooms <- readTVar (roomsVar mgr)
+        let active = Map.toList $ Map.filter (\r -> status r /= Done) rooms
+        return $ case active of
+            ((rid, _):_) -> Just rid
+            _ -> Nothing

@@ -143,6 +143,14 @@ const API = {
         return await this.get(`/api/rooms/${roomId}`);
     },
 
+    /**
+     * Get currently active room (if any)
+     * @returns {Promise<{garStatus:string, garRoomId:string|null}|null>}
+     */
+    async getActiveRoom() {
+        return await this.get('/api/rooms/active');
+    },
+
     // ============================================================================
     // AI Endpoints
     // ============================================================================

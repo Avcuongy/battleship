@@ -67,8 +67,8 @@ function handleTwoPlayerMode() {
   // Save game mode to sessionStorage
   sessionStorage.setItem('battleship-game-mode', '1vs1');
   
-  // Navigate to 1vs1 loading page
-  window.location.href = "./1vs1/loading.html";
+  // Navigate to 1vs1 entry page (pre-lobby) using absolute path to avoid relative issues
+  window.location.href = "/pages/1vs1/entry.html";
 }
 
 // ============================================================================

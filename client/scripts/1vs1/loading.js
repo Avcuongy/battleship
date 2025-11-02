@@ -151,17 +151,14 @@
   }
 
   function wireEvents() {
-    const createBtn = document.getElementById("createRoomButton");
-    if (createBtn) {
-      createBtn.addEventListener("click", async () => {
-        if (state.roomId) return; // already created
-        await hostFlow();
+    if (els.joinButton) {
+      els.joinButton.addEventListener("click", onConnectClick);
+    }
+    if (els.joinInput) {
+      els.joinInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") onConnectClick();
       });
     }
-    els.joinButton.addEventListener("click", onConnectClick);
-    els.joinInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") onConnectClick();
-    });
 
     els.startButton.addEventListener("click", () => {
       // Next page (ship placement for 1vs1), if exists
@@ -175,13 +172,12 @@
       await ensurePlayer();
       wireEvents();
 
-      // Detect from URL: if roomId present → joiner, else wait for user action
+      // Detect from URL: if roomId present → joiner, else auto host (create room)
       const existingRoomId = qsParam("roomId");
       if (existingRoomId) {
         await joinFlow(existingRoomId);
       } else {
-        // Do not auto-create room; user clicks "Tạo room" to host
-        setLoading(false, "Nhấn 'Tạo room' để tạo phòng hoặc nhập ROOM ID để kết nối");
+        await hostFlow();
       }
     } catch (e) {
       console.error("Init error:", e);

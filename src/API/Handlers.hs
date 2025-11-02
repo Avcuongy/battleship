@@ -4,6 +4,7 @@ module API.Handlers
     ( createRoomHandler
     , joinRoomHandler
     , getRoomHandler
+    , getActiveRoomHandler
     , startAIHandler
     , processAIAttackHandler
     , savePlayerHandler
@@ -101,12 +102,16 @@ getRoomHandler roomMgr roomId = do
                 , grrPlayer2Name = ST.player2Name room
                 , grrPlayer2Ready = Just (ST.player2Ready room)
                 }
-        Nothing -> do
-            status status404
-            json $ ErrorResponse
-                { errStatus = "error"
-                , errMessage = "Room not found"
-                }
+
+-- GET /api/rooms/active
+getActiveRoomHandler :: RoomMgr.RoomManager -> ActionM ()
+getActiveRoomHandler roomMgr = do
+    rid <- liftIO $ RoomMgr.activeRoomId roomMgr
+    status status200
+    json $ object
+        [ "garStatus" .= (case rid of Just _ -> ("active" :: Text); Nothing -> "none")
+        , "garRoomId" .= rid
+        ]
 
 -- ============================================================================
 -- AI Handlers
