@@ -162,8 +162,8 @@
 
     els.startButton.addEventListener("click", () => {
       // Next page (ship placement for 1vs1), if exists
-      // For now, go to gameplay page placeholder
-      window.location.href = `/pages/1vs1/room.html?roomId=${state.roomId}`;
+      // Go to 1vs1 setup (ship placement) page
+      window.location.href = `/pages/1vs1/setup.html?roomId=${state.roomId}`;
     });
   }
 
