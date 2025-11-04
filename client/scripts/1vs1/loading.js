@@ -104,6 +104,8 @@
         console.log(`[HOST] Connecting WS: roomId=${state.roomId}, playerId=${state.playerId}`);
         await WSManager.connect(state.roomId, state.playerId);
         console.log("[HOST] WS connected successfully");
+        // After connecting, register WS message handlers
+        registerWsHandlers();
       } catch (e) {
         console.error("[HOST] WS connect failed:", e);
         alert("Không thể kết nối WebSocket. Vui lòng thử lại.");
@@ -157,6 +159,8 @@
       console.log(`[JOIN] Connecting WS: roomId=${state.roomId}, playerId=${state.playerId}`);
       await WSManager.connect(state.roomId, state.playerId);
       console.log("[JOIN] WS connected successfully");
+      // After connecting, register WS message handlers
+      registerWsHandlers();
     } catch (e) {
       console.error("[JOIN] WS connect failed:", e);
       alert("Không thể kết nối WebSocket. Vui lòng thử lại.");
@@ -173,6 +177,17 @@
       els.startButton.disabled = true;
       els.startButton.style.display = 'none';
     }
+  }
+
+  // Register common WebSocket message handlers used in loading page
+  function registerWsHandlers() {
+    // Handle GAME_START from server to transition both clients to setup phase
+    WSManager.on(Protocol.SERVER_MSG.GAME_START, () => {
+      console.log('[WS] GAME_START received -> navigating both clients to setup phase');
+      if (state.pollTimer) clearInterval(state.pollTimer);
+      const target = `/pages/1vs1/setup.html?roomId=${encodeURIComponent(state.roomId)}&playerId=${encodeURIComponent(state.playerId)}`;
+      window.location.href = target;
+    });
   }
 
   async function onConnectClick() {
@@ -194,13 +209,23 @@
       });
     }
 
-    els.startButton.addEventListener("click", () => {
-      // Clear poll timer before navigating
-      if (state.pollTimer) clearInterval(state.pollTimer);
-      
-      // Next page (ship placement for 1vs1), if exists
-      // Go to 1vs1 setup (ship placement) page
-      window.location.href = `/pages/1vs1/setup.html?roomId=${state.roomId}`;
+    els.startButton.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (!state.isHost) return; // Safety: only host can start
+      console.log('[UI] Host clicked START; sending WS START');
+      try {
+        if (typeof WSManager.sendStart === 'function') {
+          WSManager.sendStart();
+        } else {
+          // Fallback if method not present
+          WSManager.send(Protocol.buildStartMessage(state.playerId));
+        }
+        // Provide immediate feedback; navigation awaits GAME_START broadcast
+        els.startButton.disabled = true;
+        els.startButton.textContent = 'ĐANG BẮT ĐẦU...';
+      } catch (err) {
+        console.error('[UI] Failed to send START over WS', err);
+      }
     });
   }
 

@@ -15,8 +15,10 @@ module Network.Protocol
     -- * Specific message types
     , ReadyMessage(..)
     , AttackMessage(..)
+        , StartMessage(..)
     , AttackResultMessage(..)
     , GameOverMessage(..)
+        , GameStartMessage(..)
     , ErrorMessage(..)
     
     -- * Encoding/Decoding
@@ -39,6 +41,7 @@ import Game.Types (Fleet, Position)
 data ClientMessage
     = ReadyMsg ReadyMessage
     | AttackMsg AttackMessage
+    | StartMsg StartMessage
     deriving (Show, Eq, Generic)
 
 instance FromJSON ClientMessage
@@ -68,6 +71,14 @@ data AttackMessage = AttackMessage
     { amPlayerId :: Text
     , amPosition :: Position
     } deriving (Show, Eq, Generic)
+-- | Host signals to start (navigate to setup)
+data StartMessage = StartMessage
+    { smPlayerId :: Text
+    } deriving (Show, Eq, Generic)
+
+instance FromJSON StartMessage
+instance ToJSON StartMessage
+
 
 instance FromJSON AttackMessage
 instance ToJSON AttackMessage
@@ -87,8 +98,17 @@ instance ToJSON AttackMessage
 data ServerMessage
     = AttackResultMsg AttackResultMessage
     | GameOverMsg GameOverMessage
+    | GameStartMsg GameStartMessage
     | ErrorMsg ErrorMessage
     deriving (Show, Eq, Generic)
+-- | Notify both clients to navigate to setup (pre-game placement)
+data GameStartMessage = GameStartMessage
+    { gsmRoomId :: Text
+    } deriving (Show, Eq, Generic)
+
+instance FromJSON GameStartMessage
+instance ToJSON GameStartMessage
+
 
 instance FromJSON ServerMessage
 instance ToJSON ServerMessage

@@ -5,7 +5,7 @@ module Network.WebSocket.Handler
     ) where
 
 import qualified Network.WebSockets as WS
-import Control.Concurrent (forkIO)
+import Control.Concurrent (forkIO, threadDelay)
 import Control.Concurrent.STM (atomically)
 import Control.Monad (forever, when)
 import Control.Exception (catch, SomeException, fromException)
@@ -92,6 +92,24 @@ messageLoop state conn roomId playerId = forever $ do
         
         Just (AttackMsg attackMsg) ->
             handleAttack state conn roomId playerId attackMsg
+        
+        Just (StartMsg startMsg) ->
+            handleStart state conn roomId playerId startMsg
+-- ============================================================================
+-- Start Handler
+-- ============================================================================
+
+handleStart :: WebSocketState -> WS.Connection -> Text -> Text 
+            -> StartMessage -> IO ()
+handleStart state _conn roomId playerId _startMsg = do
+    -- Only host (player1) can start
+    maybeRoom <- RoomMgr.getRoomState (wsRoomManager state) roomId
+    case maybeRoom of
+        Nothing -> return ()
+        Just room -> do
+            if playerId == ST.player1Id room
+                then Broadcast.broadcastGameStart state roomId
+                else return ()
 
 -- ============================================================================
 -- Ready Handler
@@ -243,16 +261,25 @@ handleDisconnect state roomId playerId ex = do
     
     -- Remove connection from state
     PlayerMgr.removeConnection (wsPlayerManager state) playerId
-    
-    -- Set room status to done (don't save stats as per requirements)
-    RoomMgr.setRoomStatus (wsRoomManager state) roomId Done
-    
-    -- Get opponent ID
-    maybeOpponent <- RoomMgr.getOpponentId 
-        (wsRoomManager state) roomId playerId
-    
-    case maybeOpponent of
-        Nothing -> return ()
-        Just opponentId -> do
-            -- Broadcast opponent win
-            Broadcast.broadcastGameOver state roomId opponentId
+
+    -- Grace period to allow client to navigate and reconnect (e.g., page change)
+    -- If the player does not reconnect within this window, end the game.
+    let graceMicros = 8 * 1000 * 1000  -- 8 seconds
+    _ <- forkIO $ do
+        threadDelay graceMicros
+        -- Check if player reconnected
+        maybeConn <- PlayerMgr.getConnection (wsPlayerManager state) playerId
+        case maybeConn of
+            Just _ -> do
+                putStrLn $ "    Reconnected within grace period: " ++ T.unpack playerId
+                return ()
+            Nothing -> do
+                putStrLn $ "    No reconnect; finalizing game over for: " ++ T.unpack playerId
+                -- Set room status to done and notify opponent
+                RoomMgr.setRoomStatus (wsRoomManager state) roomId Done
+                maybeOpponent <- RoomMgr.getOpponentId (wsRoomManager state) roomId playerId
+                case maybeOpponent of
+                    Nothing -> return ()
+                    Just opponentId -> Broadcast.broadcastGameOver state roomId opponentId
+        return ()
+    return ()

@@ -225,6 +225,15 @@ class WebSocketManager {
         const message = Protocol.buildAttackMessage(this.playerId, position);
         return this.send(message);
     }
+
+    /**
+     * Send start message (host only)
+     * @returns {boolean}
+     */
+    sendStart() {
+        const message = Protocol.buildStartMessage(this.playerId);
+        return this.send(message);
+    }
 }
 
 // Create singleton instance

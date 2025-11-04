@@ -60,9 +60,8 @@ broadcastToRoom state roomId msg = do
 broadcastGameStart :: WebSocketState -> Text -> IO ()
 broadcastGameStart state roomId = do
     putStrLn $ "Broadcasting game start for room: " ++ T.unpack roomId
-    -- Could send a GameStartMessage if needed
-    -- For now, clients know game started when both ready
-    return ()
+    let msg = GameStartMsg $ GameStartMessage { gsmRoomId = roomId }
+    broadcastToRoom state roomId msg
 
 -- | Broadcast attack result
 broadcastAttackResult :: WebSocketState -> Text -> Text -> Position 
