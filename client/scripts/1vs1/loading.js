@@ -167,8 +167,12 @@
 
     // Update right box to show self (joiner appears on right)
     setPlayer2(state.playerId, state.playerName);
-    setLoading(false, "Đã tham gia phòng");
-    els.startButton.disabled = false; // optional: allow proceed
+    setLoading(false, "Đã tham gia phòng. Chờ chủ phòng bấm BẮT ĐẦU.");
+    // Joiner must not be able to start the game
+    if (els.startButton) {
+      els.startButton.disabled = true;
+      els.startButton.style.display = 'none';
+    }
   }
 
   async function onConnectClick() {
