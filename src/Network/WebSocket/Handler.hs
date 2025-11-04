@@ -13,6 +13,9 @@ import qualified Network.WebSockets as WS
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.ByteString.Lazy as BL
+import Data.Aeson (Value(..), decode)
+import qualified Data.Aeson.Key as K
+import qualified Data.Aeson.KeyMap as KM
 
 import qualified Network.WebSocket.Broadcast as Broadcast
 import Network.Protocol
@@ -81,20 +84,35 @@ messageLoop state conn roomId playerId = forever $ do
     msgData <- WS.receiveData conn :: IO BL.ByteString
     
     -- Decode message
-    case decodeClientMessage msgData of
-        Nothing -> do
-            -- Invalid message: silent ignore (as per requirements)
-            putStrLn $ "Invalid message from " ++ T.unpack playerId
-            return ()
-        
-        Just (ReadyMsg readyMsg) -> 
-            handleReady state conn roomId playerId readyMsg
-        
-        Just (AttackMsg attackMsg) ->
-            handleAttack state conn roomId playerId attackMsg
-        
-        Just (StartMsg startMsg) ->
-            handleStart state conn roomId playerId startMsg
+    case () of
+        _ | isClientPing msgData ->
+              -- Ignore client keepalive pings sent as text frames
+              return ()
+          | otherwise ->
+              case decodeClientMessage msgData of
+                  Nothing -> do
+                      -- Invalid message: silent ignore (as per requirements)
+                      putStrLn $ "Invalid message from " ++ T.unpack playerId
+                      return ()
+                  
+                  Just (ReadyMsg readyMsg) -> 
+                      handleReady state conn roomId playerId readyMsg
+                  
+                  Just (AttackMsg attackMsg) ->
+                      handleAttack state conn roomId playerId attackMsg
+                  
+                  Just (StartMsg startMsg) ->
+                      handleStart state conn roomId playerId startMsg
+
+-- | Detect client keepalive ping messages in JSON form: {"type":"ping"}
+isClientPing :: BL.ByteString -> Bool
+isClientPing bs =
+    case decode bs :: Maybe Value of
+        Just (Object o) ->
+            case KM.lookup (K.fromString "type") o of
+                Just (String t) -> t == "ping"
+                _ -> False
+        _ -> False
 -- ============================================================================
 -- Start Handler
 -- ============================================================================

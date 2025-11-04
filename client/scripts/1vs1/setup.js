@@ -94,10 +94,8 @@
 		setSelf(state.playerName || state.playerId);
 
 		// Render board and ship palette
-		Board.render('gameBoard', true);
-		Ships.init('gameBoard', null, (fleet) => {
-			if (els.readyBtn) els.readyBtn.disabled = (fleet.length !== 5);
-		});
+			Board.render('gameBoard', true);
+			Ships.init('gameBoard', 'shipsSection');
 
 		// Connect WebSocket
 		try {
