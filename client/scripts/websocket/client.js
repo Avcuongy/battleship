@@ -28,6 +28,11 @@ class WebSocketManager {
             this.roomId = roomId;
             this.playerId = playerId;
             this._opened = false;
+            // Clear previous keepalive if any
+            if (this._keepAliveTimer) {
+                clearInterval(this._keepAliveTimer);
+                this._keepAliveTimer = null;
+            }
 
             const wsProto = (typeof window !== 'undefined' && window.location && window.location.protocol === 'https:') ? 'wss' : 'ws';
             const wsHost = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : 'localhost';
@@ -44,6 +49,14 @@ class WebSocketManager {
                     console.log('WebSocket connected');
                     this.reconnectAttempts = 0;
                     this._opened = true;
+                    // Send a tiny keepalive right after open to avoid aggressive proxies closing idle sockets
+                    try { this.ws.send('{"type":"ping"}'); } catch (_) {}
+                    // And schedule periodic keepalive every 20s
+                    this._keepAliveTimer = setInterval(() => {
+                        if (this.isConnected()) {
+                            try { this.ws.send('{"type":"ping"}'); } catch (_) {}
+                        }
+                    }, 20000);
                     if (!settled) { settled = true; resolve(true); }
                 };
 
@@ -55,9 +68,13 @@ class WebSocketManager {
                 // Connection closed
                 this.ws.onclose = (event) => {
                     console.log('WebSocket closed:', event.code, event.reason);
+                    if (this._keepAliveTimer) {
+                        clearInterval(this._keepAliveTimer);
+                        this._keepAliveTimer = null;
+                    }
                     if (this._opened) {
                         // Real disconnect after being connected
-                        this.handleDisconnect();
+                        this.handleDisconnect(event);
                     } else {
                         // Closed before open – treat as connect failure
                         console.warn('WebSocket closed before opening');
@@ -168,16 +185,19 @@ class WebSocketManager {
     /**
      * Handle disconnect (no reconnect, opponent auto-wins)
      */
-    handleDisconnect() {
-        console.log('Handling disconnect...');
+    handleDisconnect(event) {
+        const code = event && typeof event.code === 'number' ? event.code : '(unknown)';
+        const reason = event && event.reason ? event.reason : '';
+        console.log('Handling disconnect...', code, reason);
         
         // Per requirements: Disconnect = game over, no reconnect
         // Redirect to home or show game over
         if (this.messageHandlers['disconnect']) {
-            this.messageHandlers['disconnect']();
+            this.messageHandlers['disconnect']({ code, reason });
         } else {
             // Default behavior: alert and redirect
-            alert('Connection lost. Game ended.');
+            const extra = reason ? ` (reason: ${reason})` : '';
+            alert(`Connection lost. Game ended. Code: ${code}${extra}`);
             window.location.href = '/pages/home.html';
         }
     }

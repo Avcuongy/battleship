@@ -9,12 +9,8 @@ import qualified Network.WebSockets as WS
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Handler.WebSockets (websocketsOr)
 import Network.Wai (Application, responseLBS)
-import Network.HTTP.Types (status400)
-import Control.Concurrent (forkIO)
-import Control.Concurrent.STM (TVar)
+import Network.HTTP.Types (status400, parseQuery)
 import qualified Data.Text as T
-import qualified Data.Map as Map
-import Data.Map (Map)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.Text.Encoding as TE
 
@@ -43,29 +39,34 @@ wsApp :: WebSocketState -> WS.ServerApp
 wsApp state pending = do
     let req = WS.pendingRequest pending
         path = WS.requestPath req
-        query = WS.requestHeaders req
+        hdrs = WS.requestHeaders req
+    putStrLn $ "[WS] Incoming request path: " ++ BS.unpack path
+    putStrLn $ "[WS] Incoming headers (subset): " ++ show (take 3 hdrs)
     case parseParams (WS.requestPath req) of
         Nothing -> do
+            putStrLn "[WS] Failed to parse roomId/playerId from query"
             conn <- WS.acceptRequest pending
             WS.sendTextData conn ("Error: Missing roomId/playerId" :: T.Text)
             WS.sendClose conn ("Invalid params" :: T.Text)
         Just (roomId, playerId) -> do
+            putStrLn $ "[WS] Parsed roomId=" ++ T.unpack roomId ++ ", playerId=" ++ T.unpack playerId
             conn <- WS.acceptRequest pending
-            putStrLn $ "➡️  New connection: " ++ T.unpack roomId ++ " / " ++ T.unpack playerId
-            _ <- forkIO $ 
-                WS.withPingThread conn 30 (return ()) $
-                    Handler.handleConnection state conn roomId playerId
-            return ()
+            putStrLn $ "New connection: " ++ T.unpack roomId ++ " / " ++ T.unpack playerId
+            -- Do not fork here; keep this thread blocked to keep the socket alive
+            WS.withPingThread conn 30 (return ()) $
+                Handler.handleConnection state conn roomId playerId
 
 -- ======================================================================
 -- | Parse query from raw path
 -- Expected: /?roomId=ABC123&playerId=xyz789
 parseParams :: BS.ByteString -> Maybe (T.Text, T.Text)
 parseParams path =
-    let queryStr = BS.dropWhile (/= '?') path
-        params = BS.split '&' (BS.drop 1 queryStr)
-        parsedParams = [BS.break (== '=') p | p <- params]
-        getVal key = fmap (TE.decodeUtf8 . BS.drop 1) (lookup key parsedParams)
-    in case (getVal "roomId", getVal "playerId") of
+    let (_, qWithQMark) = BS.break (== '?') path
+        qs = BS.drop 1 qWithQMark  -- drop '?'
+        params = parseQuery qs     -- [(key, Maybe value)]
+        findVal k = case lookup k params of
+            Just (Just v) -> Just (TE.decodeUtf8 v)
+            _ -> Nothing
+    in case (findVal "roomId", findVal "playerId") of
         (Just rid, Just pid) -> Just (rid, pid)
         _ -> Nothing

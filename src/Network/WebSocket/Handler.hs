@@ -8,7 +8,8 @@ import qualified Network.WebSockets as WS
 import Control.Concurrent (forkIO)
 import Control.Concurrent.STM (atomically)
 import Control.Monad (forever, when)
-import Control.Exception (catch, SomeException)
+import Control.Exception (catch, SomeException, fromException)
+import qualified Network.WebSockets as WS
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.ByteString.Lazy as BL
@@ -23,6 +24,7 @@ import Game.Types (Position, Result(..))
 import qualified Game.Timer as Timer
 import Network.WebSocket.Types (WebSocketState(..))
 import State.Types (GameStatus(..))
+import qualified State.Types as ST
 
 -- ============================================================================
 -- Connection Handler (CONCURRENCY)
@@ -39,12 +41,32 @@ without blocking each other.
 -}
 handleConnection :: WebSocketState -> WS.Connection -> Text -> Text -> IO ()
 handleConnection state conn roomId playerId = do
+    putStrLn $ "=== [WS] Starting connection handler ==="
+    putStrLn $ "    RoomId: " ++ T.unpack roomId
+    putStrLn $ "    PlayerId: " ++ T.unpack playerId
+    
+    -- Ensure player exists in PlayerManager (add if missing, derive name from room if possible)
+    exists <- PlayerMgr.playerExists (wsPlayerManager state) playerId
+    if not exists
+        then do
+            maybeRoom <- RoomMgr.getRoomState (wsRoomManager state) roomId
+            let derivedName = case maybeRoom of
+                    Nothing -> "Guest-" <> playerId
+                    Just room ->
+                        if playerId == ST.player1Id room
+                            then ST.player1Name room
+                            else maybe ("Guest-" <> playerId) id (ST.player2Name room)
+            PlayerMgr.addPlayer (wsPlayerManager state) playerId derivedName
+            putStrLn $ "    Player added: " ++ T.unpack playerId ++ " (" ++ T.unpack derivedName ++ ")"
+        else
+            return ()
+
     -- Register connection in state
     PlayerMgr.addConnection (wsPlayerManager state) playerId conn
-    
-    putStrLn $ "Handling connection for player: " ++ T.unpack playerId
+    putStrLn $ "    Connection registered for player: " ++ T.unpack playerId
     
     -- ★ Main message loop (runs in separate thread per connection)
+    putStrLn $ "    Starting message loop..."
     messageLoop state conn roomId playerId
         `catch` handleDisconnect state roomId playerId
 
@@ -203,8 +225,21 @@ processAttack state roomId playerId pos = do
 -- | Handle player disconnect (opponent auto-wins)
 handleDisconnect :: WebSocketState -> Text -> Text -> SomeException -> IO ()
 handleDisconnect state roomId playerId ex = do
-    putStrLn $ "Player disconnected: " ++ T.unpack playerId 
-             ++ ", error: " ++ show ex
+    putStrLn "=== [WS] Player disconnected ==="
+    putStrLn $ "    PlayerId: " ++ T.unpack playerId
+    putStrLn $ "    RoomId: " ++ T.unpack roomId
+    case fromException ex of
+        Just (WS.CloseRequest code msg) ->
+            putStrLn $ "    CloseRequest: code=" ++ show code
+                     ++ ", reason=" ++ show msg
+        Just WS.ConnectionClosed ->
+            putStrLn "    ConnectionClosed (no close frame)"
+        Just (WS.UnicodeException err) ->
+            putStrLn $ "    UnicodeException: " ++ show err
+        Just (WS.ParseException err) ->
+            putStrLn $ "    ParseException: " ++ err
+        Nothing ->
+            putStrLn $ "    Error: " ++ show ex
     
     -- Remove connection from state
     PlayerMgr.removeConnection (wsPlayerManager state) playerId

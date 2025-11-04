@@ -98,6 +98,9 @@
 
   async function init() {
     try {
+      // Clear old room ID from previous sessions
+      Storage.clearRoomId();
+      
       await ensurePlayer();
       wireEvents();
       await checkActiveRoom();

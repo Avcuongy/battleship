@@ -89,12 +89,27 @@
       Storage.saveRoomId(state.roomId);
       setRoom(state.roomId);
 
+      // Register custom disconnect handler BEFORE connecting
+      WSManager.on('disconnect', ({ code, reason }) => {
+        console.log('Custom disconnect handler: cleaning up and redirecting', code, reason);
+        if (state.pollTimer) clearInterval(state.pollTimer);
+        Storage.clearRoomId();
+        alert(`Kết nối WebSocket bị ngắt (code: ${code}${reason ? `, reason: ${reason}` : ''}). Quay về trang entry.`);
+        window.location.href = '/pages/1vs1/entry.html';
+      });
+
       // Connect WS
+      setLoading(true, "Đang kết nối WebSocket...");
       try {
+        console.log(`[HOST] Connecting WS: roomId=${state.roomId}, playerId=${state.playerId}`);
         await WSManager.connect(state.roomId, state.playerId);
-        console.log("WS connected as host");
+        console.log("[HOST] WS connected successfully");
       } catch (e) {
-        console.warn("WS connect failed (host):", e);
+        console.error("[HOST] WS connect failed:", e);
+        alert("Không thể kết nối WebSocket. Vui lòng thử lại.");
+        Storage.clearRoomId();
+        window.location.href = '/pages/1vs1/entry.html';
+        return;
       }
 
       // Start polling for player2 appearance
@@ -124,15 +139,30 @@
     const res = await API.joinRoom(roomId, state.playerId, state.playerName);
     if (!res) {
       setLoading(true, "Không thể tham gia phòng.");
+      Storage.clearRoomId();
       return;
     }
 
+    // Register custom disconnect handler BEFORE connecting
+    WSManager.on('disconnect', ({ code, reason }) => {
+      console.log('Custom disconnect handler (join): cleaning up and redirecting', code, reason);
+      Storage.clearRoomId();
+      alert(`Kết nối WebSocket bị ngắt (code: ${code}${reason ? `, reason: ${reason}` : ''}). Quay về trang entry.`);
+      window.location.href = '/pages/1vs1/entry.html';
+    });
+
     // Connect WS as player2
+    setLoading(true, "Đang kết nối WebSocket...");
     try {
+      console.log(`[JOIN] Connecting WS: roomId=${state.roomId}, playerId=${state.playerId}`);
       await WSManager.connect(state.roomId, state.playerId);
-      console.log("WS connected as joiner");
+      console.log("[JOIN] WS connected successfully");
     } catch (e) {
-      console.warn("WS connect failed (joiner):", e);
+      console.error("[JOIN] WS connect failed:", e);
+      alert("Không thể kết nối WebSocket. Vui lòng thử lại.");
+      Storage.clearRoomId();
+      window.location.href = '/pages/1vs1/entry.html';
+      return;
     }
 
     // Update right box to show self (joiner appears on right)
@@ -161,6 +191,9 @@
     }
 
     els.startButton.addEventListener("click", () => {
+      // Clear poll timer before navigating
+      if (state.pollTimer) clearInterval(state.pollTimer);
+      
       // Next page (ship placement for 1vs1), if exists
       // Go to 1vs1 setup (ship placement) page
       window.location.href = `/pages/1vs1/setup.html?roomId=${state.roomId}`;

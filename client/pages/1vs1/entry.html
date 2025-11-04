@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>1 vs 1 — Lobby</title>
-  <link rel="stylesheet" href="../../styles/home.css" />
+    <title>entry</title>
+    <link rel="stylesheet" href="../../styles/home.css" />
   </head>
   <body>
     <div class="game-container">
@@ -18,22 +18,42 @@
         <!-- Right Panel (styled like Home) -->
         <div class="mode-selection-container">
           <!-- Host (create room) on top -->
-          <div class="mode-buttons" style="margin-bottom: 20px;">
+          <div class="mode-buttons" style="margin-bottom: 20px">
             <div class="mode-button" id="hostButton">
               <div class="mode-text">TẠO PHÒNG</div>
             </div>
           </div>
-          
+
           <!-- Join row: input + connect on the right -->
-          <div style="display:flex; gap:12px; align-items:center;">
-            <input id="joinRoomInput" type="text" maxlength="6" placeholder="Nhập ROOM ID để vào"
-                   style="height: 60px; padding: 0 12px; border: 2px solid #1e3c72; border-radius: 8px; font-size: 1.1rem; width: 220px;" />
+          <div style="display: flex; gap: 12px; align-items: center">
+            <input
+              id="joinRoomInput"
+              type="text"
+              maxlength="6"
+              placeholder="Nhập ROOM ID để vào"
+              style="
+                height: 60px;
+                padding: 0 12px;
+                border: 2px solid #1e3c72;
+                border-radius: 8px;
+                font-size: 1.1rem;
+                width: 220px;
+              "
+            />
             <div class="mode-button" id="joinButton">
               <div class="mode-text">CONNECT</div>
             </div>
           </div>
 
-          <div id="hintText" style="margin-top:14px; text-align:center; font-size:14px; opacity:0.8;"></div>
+          <div
+            id="hintText"
+            style="
+              margin-top: 14px;
+              text-align: center;
+              font-size: 14px;
+              opacity: 0.8;
+            "
+          ></div>
         </div>
       </div>
     </div>
