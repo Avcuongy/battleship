@@ -6,11 +6,11 @@
 const Ships = {
   // Ship types and sizes (must match backend)
   SHIP_TYPES: {
-    'Carrier': 5,
-    'Battleship': 4,
-    'Cruiser': 3,
-    'Submarine': 3,
-    'Destroyer': 2
+    Carrier: 5,
+    Battleship: 4,
+    Cruiser: 3,
+    Submarine: 3,
+    Destroyer: 2,
   },
 
   BOARD_SIZE: 10,
@@ -18,7 +18,7 @@ const Ships = {
   // State
   fleet: [],
   currentShip: null,
-  currentOrientation: 'Horizontal',
+  currentOrientation: "Horizontal",
   boardElement: null,
   shipsContainer: null,
   isPlacementMode: false,
@@ -37,47 +37,49 @@ const Ships = {
     this.boardElement = document.getElementById(boardId);
     this.shipsContainer = document.getElementById(shipsContainerId);
     this.fleet = [];
-    this.currentOrientation = 'Horizontal';
+    this.currentOrientation = "Horizontal";
     this.isPlacementMode = false;
     this.lastHover = null;
 
     if (!this.boardElement) {
-      console.error('Board element not found:', boardId);
+      console.error("Board element not found:", boardId);
       return;
     }
 
-  // Setup click-based placement
-  this.setupShipSelection();
-  this.setupBoardInteraction();
-  this.setupRotation();
+    // Setup click-based placement
+    this.setupShipSelection();
+    this.setupBoardInteraction();
+    this.setupRotation();
 
-  // Auto-select first available ship so hover/preview works immediately
-  this.autoSelectFirstAvailable();
+    // Auto-select first available ship so hover/preview works immediately
+    this.autoSelectFirstAvailable();
 
-    console.log('Ship placement initialized (click mode)');
+    console.log("Ship placement initialized (click mode)");
   },
 
   /**
    * Auto-select the first unplaced ship in the palette
    */
   autoSelectFirstAvailable() {
-    const first = document.querySelector('.ship-item:not(.placed)');
+    const first = document.querySelector(".ship-item:not(.placed)");
     if (!first) return;
     const shipName = first.dataset.name;
     const shipSize = parseInt(first.dataset.size);
 
     // Deselect previous
-    document.querySelectorAll('.ship-item').forEach(item => item.classList.remove('selected'));
+    document
+      .querySelectorAll(".ship-item")
+      .forEach((item) => item.classList.remove("selected"));
     // Select
-    first.classList.add('selected');
+    first.classList.add("selected");
 
     this.currentShip = {
       name: shipName,
       size: shipSize,
-      element: first
+      element: first,
     };
     this.isPlacementMode = true;
-    if (this.boardElement) this.boardElement.classList.add('placement-mode');
+    if (this.boardElement) this.boardElement.classList.add("placement-mode");
   },
 
   // ============================================================================
@@ -88,38 +90,38 @@ const Ships = {
    * Make ships selectable by click
    */
   setupShipSelection() {
-    const shipItems = document.querySelectorAll('.ship-item');
-    
-    shipItems.forEach(shipItem => {
-      shipItem.addEventListener('click', () => {
+    const shipItems = document.querySelectorAll(".ship-item");
+
+    shipItems.forEach((shipItem) => {
+      shipItem.addEventListener("click", () => {
         // Ignore if already placed
-        if (shipItem.classList.contains('placed')) {
+        if (shipItem.classList.contains("placed")) {
           return;
         }
 
         const shipName = shipItem.dataset.name;
         const shipSize = parseInt(shipItem.dataset.size);
-        
+
         // Deselect previous ship
-        document.querySelectorAll('.ship-item').forEach(item => {
-          item.classList.remove('selected');
+        document.querySelectorAll(".ship-item").forEach((item) => {
+          item.classList.remove("selected");
         });
 
         // Select this ship
-        shipItem.classList.add('selected');
-        
+        shipItem.classList.add("selected");
+
         this.currentShip = {
           name: shipName,
           size: shipSize,
-          element: shipItem
+          element: shipItem,
         };
 
         this.isPlacementMode = true;
         if (this.boardElement) {
-          this.boardElement.classList.add('placement-mode');
+          this.boardElement.classList.add("placement-mode");
         }
-        
-        console.log('Ship selected:', shipName);
+
+        console.log("Ship selected:", shipName);
       });
     });
   },
@@ -128,11 +130,11 @@ const Ships = {
    * Setup board interaction (hover preview + click to place)
    */
   setupBoardInteraction() {
-    const cells = this.boardElement.querySelectorAll('.cell');
-    
-    cells.forEach(cell => {
+    const cells = this.boardElement.querySelectorAll(".cell");
+
+    cells.forEach((cell) => {
       // Mouse enter - show preview
-      cell.addEventListener('mouseenter', () => {
+      cell.addEventListener("mouseenter", () => {
         if (this.isPlacementMode && this.currentShip) {
           const row = parseInt(cell.dataset.row);
           const col = parseInt(cell.dataset.col);
@@ -142,14 +144,14 @@ const Ships = {
       });
 
       // Mouse leave - hide preview
-      cell.addEventListener('mouseleave', () => {
+      cell.addEventListener("mouseleave", () => {
         if (this.isPlacementMode) {
           this.hidePlacementPreview();
         }
       });
 
       // Left click - place ship
-      cell.addEventListener('click', (e) => {
+      cell.addEventListener("click", (e) => {
         if (this.isPlacementMode && this.currentShip) {
           const row = parseInt(cell.dataset.row);
           const col = parseInt(cell.dataset.col);
@@ -158,7 +160,7 @@ const Ships = {
       });
 
       // Right click - rotate (on board)
-      cell.addEventListener('contextmenu', (e) => {
+      cell.addEventListener("contextmenu", (e) => {
         e.preventDefault();
         if (this.isPlacementMode) {
           this.rotate();
@@ -186,7 +188,7 @@ const Ships = {
    */
   detachAllCellListeners() {
     if (!this.boardElement) return;
-    const cells = this.boardElement.querySelectorAll('.cell');
+    const cells = this.boardElement.querySelectorAll(".cell");
     cells.forEach((cell) => {
       const clone = cell.cloneNode(true);
       // Preserve dataset attributes
@@ -207,14 +209,14 @@ const Ships = {
    */
   setupRotation() {
     // R key to rotate
-    document.addEventListener('keydown', (e) => {
-      if ((e.key === 'r' || e.key === 'R') && this.isPlacementMode) {
+    document.addEventListener("keydown", (e) => {
+      if ((e.key === "r" || e.key === "R") && this.isPlacementMode) {
         this.rotate();
       }
     });
 
     // Global right-click prevention when placing
-    document.addEventListener('contextmenu', (e) => {
+    document.addEventListener("contextmenu", (e) => {
       if (this.isPlacementMode) {
         e.preventDefault();
       }
@@ -238,51 +240,56 @@ const Ships = {
       shipType: shipType,
       shipPosition: { posRow: row, posCol: col },
       shipOrientation: this.currentOrientation,
-      shipHits: new Array(this.currentShip.size).fill(false)
+      shipHits: new Array(this.currentShip.size).fill(false),
     };
 
     // Simple validation: only check bounds and overlap
     // Do NOT check if we have correct 5 ships (that's done on Ready button)
-    const positions = this.getShipPositions(row, col, this.currentShip.size, this.currentOrientation);
-    
+    const positions = this.getShipPositions(
+      row,
+      col,
+      this.currentShip.size,
+      this.currentOrientation
+    );
+
     if (!this.isValidPlacement(positions)) {
-      console.warn('Invalid placement: out of bounds or overlapping');
-      this.showError('Vị trí không hợp lệ (vượt biên hoặc trùng tàu khác)');
+      console.warn("Invalid placement: out of bounds or overlapping");
+      this.showError("Vị trí không hợp lệ (vượt biên hoặc trùng tàu khác)");
       return;
     }
 
     // Add to fleet (no full validation yet)
     this.fleet.push(ship);
-    
-    console.log('Ship added to fleet:', ship);
-    console.log('Current fleet size:', this.fleet.length);
+
+    console.log("Ship added to fleet:", ship);
+    console.log("Current fleet size:", this.fleet.length);
 
     // Visual feedback - Display ship on board
     Board.placeShip(this.boardElement.id, ship);
-    console.log('Ship displayed on board at:', ship.shipPosition);
-    
-    // Update ship item in list
-    this.currentShip.element.classList.add('placed');
-    this.currentShip.element.classList.remove('selected');
+    console.log("Ship displayed on board at:", ship.shipPosition);
 
-    console.log('Ship placement complete');
-    
+    // Update ship item in list
+    this.currentShip.element.classList.add("placed");
+    this.currentShip.element.classList.remove("selected");
+
+    console.log("Ship placement complete");
+
     // Exit placement mode
     this.isPlacementMode = false;
     this.currentShip = null;
     this.lastHover = null;
     this.hidePlacementPreview();
     if (this.boardElement) {
-      this.boardElement.classList.remove('placement-mode');
+      this.boardElement.classList.remove("placement-mode");
     }
 
     // Auto-select next available ship so user can continue placing seamlessly
     this.autoSelectFirstAvailable();
-    
+
     // Enable ready button if we have at least 5 ships
     // (full validation happens on button click)
     if (this.fleet.length >= 5) {
-      const readyBtn = document.getElementById('readyBtn');
+      const readyBtn = document.getElementById("readyBtn");
       if (readyBtn) {
         readyBtn.disabled = false;
       }
@@ -300,20 +307,20 @@ const Ships = {
     if (!this.currentShip) return;
 
     const positions = this.getShipPositions(
-      row, 
-      col, 
-      this.currentShip.size, 
+      row,
+      col,
+      this.currentShip.size,
       this.currentOrientation
     );
 
     // Check if valid placement
     const isValid = this.isValidPlacement(positions);
 
-    positions.forEach(pos => {
+    positions.forEach((pos) => {
       const cell = Board.getCell(this.boardElement.id, pos);
       if (cell) {
-        cell.classList.add('preview');
-        cell.classList.add(isValid ? 'valid' : 'invalid');
+        cell.classList.add("preview");
+        cell.classList.add(isValid ? "valid" : "invalid");
       }
     });
   },
@@ -322,9 +329,9 @@ const Ships = {
    * Hide placement preview
    */
   hidePlacementPreview() {
-    const cells = this.boardElement.querySelectorAll('.cell');
-    cells.forEach(cell => {
-      cell.classList.remove('preview', 'valid', 'invalid');
+    const cells = this.boardElement.querySelectorAll(".cell");
+    cells.forEach((cell) => {
+      cell.classList.remove("preview", "valid", "invalid");
     });
   },
 
@@ -336,8 +343,12 @@ const Ships = {
   isValidPlacement(positions) {
     // Check bounds
     for (const pos of positions) {
-      if (pos.posRow < 0 || pos.posRow >= this.BOARD_SIZE ||
-          pos.posCol < 0 || pos.posCol >= this.BOARD_SIZE) {
+      if (
+        pos.posRow < 0 ||
+        pos.posRow >= this.BOARD_SIZE ||
+        pos.posCol < 0 ||
+        pos.posCol >= this.BOARD_SIZE
+      ) {
         return false;
       }
     }
@@ -345,7 +356,7 @@ const Ships = {
     // Check overlap with existing ships
     for (const pos of positions) {
       const cell = Board.getCell(this.boardElement.id, pos);
-      if (cell && cell.classList.contains('has-ship')) {
+      if (cell && cell.classList.contains("has-ship")) {
         return false;
       }
     }
@@ -361,13 +372,13 @@ const Ships = {
    * Rotate current orientation (Horizontal ↔ Vertical)
    */
   rotate() {
-    this.currentOrientation = 
-      this.currentOrientation === 'Horizontal' ? 'Vertical' : 'Horizontal';
-    
-    console.log('Orientation changed to:', this.currentOrientation);
-    
+    this.currentOrientation =
+      this.currentOrientation === "Horizontal" ? "Vertical" : "Horizontal";
+
+    console.log("Orientation changed to:", this.currentOrientation);
+
     // Update UI indicator (if exists)
-    const orientationText = document.getElementById('orientationText');
+    const orientationText = document.getElementById("orientationText");
     if (orientationText) {
       orientationText.textContent = this.currentOrientation;
     }
@@ -394,39 +405,39 @@ const Ships = {
   reset() {
     // Clear board
     Board.clearShips(this.boardElement.id);
-    
+
     // Reset ship items
-    const shipItems = document.querySelectorAll('.ship-item');
-    shipItems.forEach(item => {
-      item.classList.remove('placed', 'selected');
+    const shipItems = document.querySelectorAll(".ship-item");
+    shipItems.forEach((item) => {
+      item.classList.remove("placed", "selected");
     });
 
     // Reset state
     this.fleet = [];
     this.currentShip = null;
-    this.currentOrientation = 'Horizontal';
+    this.currentOrientation = "Horizontal";
     this.isPlacementMode = false;
-  this.lastHover = null;
+    this.lastHover = null;
 
     // Hide preview
     this.hidePlacementPreview();
     if (this.boardElement) {
-      this.boardElement.classList.remove('placement-mode');
+      this.boardElement.classList.remove("placement-mode");
     }
 
     // Update orientation display
-    const orientationText = document.getElementById('orientationText');
+    const orientationText = document.getElementById("orientationText");
     if (orientationText) {
-      orientationText.textContent = 'Horizontal';
+      orientationText.textContent = "Horizontal";
     }
 
     // Disable ready button
-    const readyBtn = document.getElementById('readyBtn');
+    const readyBtn = document.getElementById("readyBtn");
     if (readyBtn) {
       readyBtn.disabled = true;
     }
 
-    console.log('Ships reset');
+    console.log("Ships reset");
 
     // Ensure listeners are fresh (in case DOM was replaced by other flows)
     this.rebindEvents();
@@ -449,15 +460,15 @@ const Ships = {
    */
   getShipPositions(row, col, size, orientation) {
     const positions = [];
-    
+
     for (let i = 0; i < size; i++) {
-      if (orientation === 'Horizontal') {
+      if (orientation === "Horizontal") {
         positions.push({ posRow: row, posCol: col + i });
       } else {
         positions.push({ posRow: row + i, posCol: col });
       }
     }
-    
+
     return positions;
   },
 
@@ -476,22 +487,22 @@ const Ships = {
    */
   showError(message) {
     // Simple alert (can be replaced with nicer UI)
-    console.error('Ship placement error:', message);
-    
+    console.error("Ship placement error:", message);
+
     // Optional: Show in UI
-    const errorDiv = document.getElementById('placementError');
+    const errorDiv = document.getElementById("placementError");
     if (errorDiv) {
       errorDiv.textContent = message;
-      errorDiv.style.display = 'block';
-      
+      errorDiv.style.display = "block";
+
       setTimeout(() => {
-        errorDiv.style.display = 'none';
+        errorDiv.style.display = "none";
       }, 3000);
     }
-  }
+  },
 };
 
 // Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
+if (typeof module !== "undefined" && module.exports) {
   module.exports = Ships;
 }

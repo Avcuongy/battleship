@@ -14,13 +14,13 @@
  */
 function loadPlayerData() {
   const player = Storage.getPlayer();
-  
+
   if (!player.playerId || !player.playerName) {
     console.warn("No player data found, redirecting to initial page");
     window.location.href = "./initial.html";
     return null;
   }
-  
+
   console.log("Player loaded:", player);
   return player;
 }
@@ -31,11 +31,11 @@ function loadPlayerData() {
 function displayPlayerInfo(player) {
   const nameElement = document.getElementById("playerName");
   const idElement = document.getElementById("playerId");
-  
+
   if (nameElement) {
     nameElement.textContent = player.playerName;
   }
-  
+
   if (idElement) {
     idElement.textContent = `ID: ${player.playerId}`;
   }
@@ -50,10 +50,10 @@ function displayPlayerInfo(player) {
  */
 function handleSinglePlayerMode() {
   console.log("Selected: AI mode");
-  
+
   // Save game mode to sessionStorage (will be used by loading page)
-  sessionStorage.setItem('battleship-game-mode', 'ai');
-  
+  sessionStorage.setItem("battleship-game-mode", "ai");
+
   // Navigate to AI loading page
   window.location.href = "./ai/loading.html";
 }
@@ -63,10 +63,10 @@ function handleSinglePlayerMode() {
  */
 function handleTwoPlayerMode() {
   console.log("Selected: 1vs1 mode");
-  
+
   // Save game mode to sessionStorage
-  sessionStorage.setItem('battleship-game-mode', '1vs1');
-  
+  sessionStorage.setItem("battleship-game-mode", "1vs1");
+
   // Navigate to 1vs1 entry page (pre-lobby) using absolute path to avoid relative issues
   window.location.href = "/pages/1vs1/entry.html";
 }
@@ -81,11 +81,11 @@ function handleTwoPlayerMode() {
 function setupEventListeners() {
   const singlePlayerBtn = document.getElementById("singlePlayerBtn");
   const twoPlayerBtn = document.getElementById("twoPlayerBtn");
-  
+
   if (singlePlayerBtn) {
     singlePlayerBtn.addEventListener("click", handleSinglePlayerMode);
   }
-  
+
   if (twoPlayerBtn) {
     twoPlayerBtn.addEventListener("click", handleTwoPlayerMode);
   }
@@ -100,21 +100,20 @@ function setupEventListeners() {
  */
 function initHomePage() {
   console.log("Initializing home page...");
-  
+
   // Load and display player data
   const player = loadPlayerData();
   if (!player) {
     return; // Redirected to initial page
   }
-  
+
   displayPlayerInfo(player);
-  
+
   // Setup event listeners
   setupEventListeners();
-  
+
   console.log("Home page initialized");
 }
 
 // Entry point
 document.addEventListener("DOMContentLoaded", initHomePage);
-

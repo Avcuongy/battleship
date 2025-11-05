@@ -5,14 +5,14 @@
 
 const Board = {
   BOARD_SIZE: 10,
-  
+
   // Cell states
   CELL_STATE: {
-    EMPTY: 'empty',
-    SHIP: 'ship',
-    HIT: 'hit',
-    MISS: 'miss',
-    SUNK: 'sunk'
+    EMPTY: "empty",
+    SHIP: "ship",
+    HIT: "hit",
+    MISS: "miss",
+    SUNK: "sunk",
   },
 
   // ============================================================================
@@ -33,26 +33,28 @@ const Board = {
     }
 
     // Clear existing content
-    container.innerHTML = '';
-    container.classList.add('game-board');
-    
+    container.innerHTML = "";
+    container.classList.add("game-board");
+
     // Store board type as data attribute
-    container.dataset.boardType = isPlayerBoard ? 'player' : 'enemy';
+    container.dataset.boardType = isPlayerBoard ? "player" : "enemy";
 
     // Create 10x10 grid
     for (let row = 0; row < this.BOARD_SIZE; row++) {
       for (let col = 0; col < this.BOARD_SIZE; col++) {
-        const cell = document.createElement('div');
-        cell.classList.add('cell');
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
         cell.dataset.row = row;
         cell.dataset.col = col;
         cell.dataset.state = this.CELL_STATE.EMPTY;
-        
+
         container.appendChild(cell);
       }
     }
 
-    console.log(`Board rendered: ${containerId} (${isPlayerBoard ? 'player' : 'enemy'})`);
+    console.log(
+      `Board rendered: ${containerId} (${isPlayerBoard ? "player" : "enemy"})`
+    );
     return container;
   },
 
@@ -78,7 +80,7 @@ const Board = {
    */
   getAllCells(containerId) {
     const container = document.getElementById(containerId);
-    return container ? container.querySelectorAll('.cell') : [];
+    return container ? container.querySelectorAll(".cell") : [];
   },
 
   // ============================================================================
@@ -92,13 +94,13 @@ const Board = {
    */
   placeShip(containerId, ship) {
     const positions = this.getShipPositions(ship);
-    
+
     console.log(`Placing ${ship.shipType} on board ${containerId}:`, positions);
-    
-    positions.forEach(pos => {
+
+    positions.forEach((pos) => {
       const cell = this.getCell(containerId, pos);
       if (cell) {
-        cell.classList.add('has-ship');
+        cell.classList.add("has-ship");
         cell.dataset.state = this.CELL_STATE.SHIP;
         cell.dataset.shipType = ship.shipType;
         console.log(`  Cell (${pos.posRow}, ${pos.posCol}) marked as ship`);
@@ -106,7 +108,7 @@ const Board = {
         console.error(`  Cell not found at (${pos.posRow}, ${pos.posCol})`);
       }
     });
-    
+
     console.log(`${ship.shipType} placement complete`);
   },
 
@@ -117,11 +119,11 @@ const Board = {
    */
   removeShip(containerId, ship) {
     const positions = this.getShipPositions(ship);
-    
-    positions.forEach(pos => {
+
+    positions.forEach((pos) => {
       const cell = this.getCell(containerId, pos);
       if (cell) {
-        cell.classList.remove('has-ship');
+        cell.classList.remove("has-ship");
         cell.dataset.state = this.CELL_STATE.EMPTY;
         delete cell.dataset.shipType;
       }
@@ -134,7 +136,7 @@ const Board = {
    * @param {Array} fleet - Array of 5 ships
    */
   displayFleet(containerId, fleet) {
-    fleet.forEach(ship => this.placeShip(containerId, ship));
+    fleet.forEach((ship) => this.placeShip(containerId, ship));
   },
 
   /**
@@ -143,8 +145,8 @@ const Board = {
    */
   clearShips(containerId) {
     const cells = this.getAllCells(containerId);
-    cells.forEach(cell => {
-      cell.classList.remove('has-ship');
+    cells.forEach((cell) => {
+      cell.classList.remove("has-ship");
       if (cell.dataset.state === this.CELL_STATE.SHIP) {
         cell.dataset.state = this.CELL_STATE.EMPTY;
       }
@@ -164,9 +166,9 @@ const Board = {
   markHit(containerId, position) {
     const cell = this.getCell(containerId, position);
     if (cell) {
-      cell.classList.add('hit');
+      cell.classList.add("hit");
       cell.dataset.state = this.CELL_STATE.HIT;
-      cell.textContent = '×';
+      cell.textContent = "×";
     }
   },
 
@@ -178,9 +180,9 @@ const Board = {
   markMiss(containerId, position) {
     const cell = this.getCell(containerId, position);
     if (cell) {
-      cell.classList.add('miss');
+      cell.classList.add("miss");
       cell.dataset.state = this.CELL_STATE.MISS;
-      cell.textContent = '•';
+      cell.textContent = "•";
     }
   },
 
@@ -191,11 +193,11 @@ const Board = {
    */
   markSunk(containerId, ship) {
     const positions = this.getShipPositions(ship);
-    
-    positions.forEach(pos => {
+
+    positions.forEach((pos) => {
       const cell = this.getCell(containerId, pos);
       if (cell) {
-        cell.classList.add('sunk');
+        cell.classList.add("sunk");
         cell.dataset.state = this.CELL_STATE.SUNK;
       }
     });
@@ -213,7 +215,7 @@ const Board = {
   highlightCell(containerId, position) {
     const cell = this.getCell(containerId, position);
     if (cell && cell.dataset.state === this.CELL_STATE.EMPTY) {
-      cell.classList.add('highlight');
+      cell.classList.add("highlight");
     }
   },
 
@@ -225,7 +227,7 @@ const Board = {
   unhighlightCell(containerId, position) {
     const cell = this.getCell(containerId, position);
     if (cell) {
-      cell.classList.remove('highlight');
+      cell.classList.remove("highlight");
     }
   },
 
@@ -238,32 +240,35 @@ const Board = {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    container.classList.add('attackable');
+    container.classList.add("attackable");
 
     const cells = this.getAllCells(containerId);
-    cells.forEach(cell => {
+    cells.forEach((cell) => {
       // Only allow clicking empty cells (not already attacked)
-      if (cell.dataset.state === this.CELL_STATE.EMPTY || 
-          cell.dataset.state === this.CELL_STATE.SHIP) {
-        
-        cell.addEventListener('click', () => {
+      if (
+        cell.dataset.state === this.CELL_STATE.EMPTY ||
+        cell.dataset.state === this.CELL_STATE.SHIP
+      ) {
+        cell.addEventListener("click", () => {
           const position = {
             posRow: parseInt(cell.dataset.row),
-            posCol: parseInt(cell.dataset.col)
+            posCol: parseInt(cell.dataset.col),
           };
           callback(position);
         });
 
         // Hover effect
-        cell.addEventListener('mouseenter', () => {
-          if (cell.dataset.state === this.CELL_STATE.EMPTY || 
-              cell.dataset.state === this.CELL_STATE.SHIP) {
-            cell.classList.add('highlight');
+        cell.addEventListener("mouseenter", () => {
+          if (
+            cell.dataset.state === this.CELL_STATE.EMPTY ||
+            cell.dataset.state === this.CELL_STATE.SHIP
+          ) {
+            cell.classList.add("highlight");
           }
         });
 
-        cell.addEventListener('mouseleave', () => {
-          cell.classList.remove('highlight');
+        cell.addEventListener("mouseleave", () => {
+          cell.classList.remove("highlight");
         });
       }
     });
@@ -277,10 +282,10 @@ const Board = {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    container.classList.remove('attackable');
+    container.classList.remove("attackable");
 
     const cells = this.getAllCells(containerId);
-    cells.forEach(cell => {
+    cells.forEach((cell) => {
       // Keep cursor unchanged; just remove listeners by cloning
       cell.replaceWith(cell.cloneNode(true)); // Remove all event listeners
     });
@@ -298,26 +303,27 @@ const Board = {
   getShipPositions(ship) {
     const positions = [];
     const lengths = {
-      'Destroyer': 2,
-      'Submarine': 3,
-      'Cruiser': 3,
-      'Battleship': 4,
-      'Carrier': 5
+      Destroyer: 2,
+      Submarine: 3,
+      Cruiser: 3,
+      Battleship: 4,
+      Carrier: 5,
     };
-    
+
     const length = lengths[ship.shipType] || 0;
     const start = ship.shipPosition;
 
     for (let i = 0; i < length; i++) {
-      if (ship.shipOrientation === 'Horizontal') {
+      if (ship.shipOrientation === "Horizontal") {
         positions.push({
           posRow: start.posRow,
-          posCol: start.posCol + i
+          posCol: start.posCol + i,
         });
-      } else { // Vertical
+      } else {
+        // Vertical
         positions.push({
           posRow: start.posRow + i,
-          posCol: start.posCol
+          posCol: start.posCol,
         });
       }
     }
@@ -331,16 +337,16 @@ const Board = {
    */
   clear(containerId) {
     const cells = this.getAllCells(containerId);
-    cells.forEach(cell => {
-      cell.className = 'cell';
+    cells.forEach((cell) => {
+      cell.className = "cell";
       cell.dataset.state = this.CELL_STATE.EMPTY;
-      cell.textContent = '';
+      cell.textContent = "";
       delete cell.dataset.shipType;
     });
-  }
+  },
 };
 
 // Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
+if (typeof module !== "undefined" && module.exports) {
   module.exports = Board;
 }

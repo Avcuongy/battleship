@@ -35,7 +35,9 @@
   function setLoading(show, text) {
     // Gracefully no-op if loading UI elements are not present
     if (text) {
-      try { console.log("[loading]", text); } catch (_) {}
+      try {
+        console.log("[loading]", text);
+      } catch (_) {}
     }
     if (els.loadingRow) {
       els.loadingRow.style.display = show ? "flex" : "none";
@@ -90,18 +92,28 @@
       setRoom(state.roomId);
 
       // Register custom disconnect handler BEFORE connecting
-      WSManager.on('disconnect', ({ code, reason }) => {
-        console.log('Custom disconnect handler: cleaning up and redirecting', code, reason);
+      WSManager.on("disconnect", ({ code, reason }) => {
+        console.log(
+          "Custom disconnect handler: cleaning up and redirecting",
+          code,
+          reason
+        );
         if (state.pollTimer) clearInterval(state.pollTimer);
         Storage.clearRoomId();
-        alert(`Kết nối WebSocket bị ngắt (code: ${code}${reason ? `, reason: ${reason}` : ''}). Quay về trang entry.`);
-        window.location.href = '/pages/1vs1/entry.html';
+        alert(
+          `Kết nối WebSocket bị ngắt (code: ${code}${
+            reason ? `, reason: ${reason}` : ""
+          }). Quay về trang entry.`
+        );
+        window.location.href = "/pages/1vs1/entry.html";
       });
 
       // Connect WS
       setLoading(true, "Đang kết nối WebSocket...");
       try {
-        console.log(`[HOST] Connecting WS: roomId=${state.roomId}, playerId=${state.playerId}`);
+        console.log(
+          `[HOST] Connecting WS: roomId=${state.roomId}, playerId=${state.playerId}`
+        );
         await WSManager.connect(state.roomId, state.playerId);
         console.log("[HOST] WS connected successfully");
         // After connecting, register WS message handlers
@@ -110,7 +122,7 @@
         console.error("[HOST] WS connect failed:", e);
         alert("Không thể kết nối WebSocket. Vui lòng thử lại.");
         Storage.clearRoomId();
-        window.location.href = '/pages/1vs1/entry.html';
+        window.location.href = "/pages/1vs1/entry.html";
         return;
       }
 
@@ -146,17 +158,27 @@
     }
 
     // Register custom disconnect handler BEFORE connecting
-    WSManager.on('disconnect', ({ code, reason }) => {
-      console.log('Custom disconnect handler (join): cleaning up and redirecting', code, reason);
+    WSManager.on("disconnect", ({ code, reason }) => {
+      console.log(
+        "Custom disconnect handler (join): cleaning up and redirecting",
+        code,
+        reason
+      );
       Storage.clearRoomId();
-      alert(`Kết nối WebSocket bị ngắt (code: ${code}${reason ? `, reason: ${reason}` : ''}). Quay về trang entry.`);
-      window.location.href = '/pages/1vs1/entry.html';
+      alert(
+        `Kết nối WebSocket bị ngắt (code: ${code}${
+          reason ? `, reason: ${reason}` : ""
+        }). Quay về trang entry.`
+      );
+      window.location.href = "/pages/1vs1/entry.html";
     });
 
     // Connect WS as player2
     setLoading(true, "Đang kết nối WebSocket...");
     try {
-      console.log(`[JOIN] Connecting WS: roomId=${state.roomId}, playerId=${state.playerId}`);
+      console.log(
+        `[JOIN] Connecting WS: roomId=${state.roomId}, playerId=${state.playerId}`
+      );
       await WSManager.connect(state.roomId, state.playerId);
       console.log("[JOIN] WS connected successfully");
       // After connecting, register WS message handlers
@@ -165,7 +187,7 @@
       console.error("[JOIN] WS connect failed:", e);
       alert("Không thể kết nối WebSocket. Vui lòng thử lại.");
       Storage.clearRoomId();
-      window.location.href = '/pages/1vs1/entry.html';
+      window.location.href = "/pages/1vs1/entry.html";
       return;
     }
 
@@ -175,7 +197,7 @@
     // Joiner must not be able to start the game
     if (els.startButton) {
       els.startButton.disabled = true;
-      els.startButton.style.display = 'none';
+      els.startButton.style.display = "none";
     }
   }
 
@@ -183,9 +205,13 @@
   function registerWsHandlers() {
     // Handle GAME_START from server to transition both clients to setup phase
     WSManager.on(Protocol.SERVER_MSG.GAME_START, () => {
-      console.log('[WS] GAME_START received -> navigating both clients to setup phase');
+      console.log(
+        "[WS] GAME_START received -> navigating both clients to setup phase"
+      );
       if (state.pollTimer) clearInterval(state.pollTimer);
-      const target = `/pages/1vs1/setup.html?roomId=${encodeURIComponent(state.roomId)}&playerId=${encodeURIComponent(state.playerId)}`;
+      const target = `/pages/1vs1/setup.html?roomId=${encodeURIComponent(
+        state.roomId
+      )}&playerId=${encodeURIComponent(state.playerId)}`;
       window.location.href = target;
     });
   }
@@ -212,9 +238,9 @@
     els.startButton.addEventListener("click", (e) => {
       e.preventDefault();
       if (!state.isHost) return; // Safety: only host can start
-      console.log('[UI] Host clicked START; sending WS START');
+      console.log("[UI] Host clicked START; sending WS START");
       try {
-        if (typeof WSManager.sendStart === 'function') {
+        if (typeof WSManager.sendStart === "function") {
           WSManager.sendStart();
         } else {
           // Fallback if method not present
@@ -222,9 +248,9 @@
         }
         // Provide immediate feedback; navigation awaits GAME_START broadcast
         els.startButton.disabled = true;
-        els.startButton.textContent = 'ĐANG BẮT ĐẦU...';
+        els.startButton.textContent = "ĐANG BẮT ĐẦU...";
       } catch (err) {
-        console.error('[UI] Failed to send START over WS', err);
+        console.error("[UI] Failed to send START over WS", err);
       }
     });
   }

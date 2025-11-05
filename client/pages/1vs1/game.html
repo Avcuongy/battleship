@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Game</title>
-    <link rel="stylesheet" href="../../styles/game.css" />
+  <title>1vs1 Game</title>
+  <link rel="stylesheet" href="../../styles/game.css" />
   </head>
   <body>
     <div class="game-container">
@@ -23,7 +23,7 @@
 
         <!-- Player 2 - Góc phải -->
         <div class="player-info right">
-          <div class="player-name" id="player2Name">AI</div>
+          <div class="player-name" id="player2Name">Opponent</div>
         </div>
       </div>
 
@@ -43,16 +43,12 @@
       </div>
     </div>
 
-    <!-- Audio -->
-    <audio
-      id="fireSound"
-      src="../assets/audio/ship-fire.mp3"
-      preload="auto"
-    ></audio>
-
     <!-- Load utilities and page script -->
     <script src="../../scripts/utils/api.js"></script>
-    <script src="../../scripts/utils/session.js"></script>
-    <script src="../../scripts/ai/game.js"></script>
+    <script src="../../scripts/utils/storage.js"></script>
+    <script src="../../scripts/shared/board.js"></script>
+    <script src="../../scripts/websocket/protocol.js"></script>
+    <script src="../../scripts/websocket/client.js"></script>
+    <script src="../../scripts/1vs1/game.js"></script>
   </body>
 </html>

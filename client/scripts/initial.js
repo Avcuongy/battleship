@@ -1,10 +1,19 @@
 const tutorialSteps = [
   { number: "1", text: "Mỗi người chơi có 2 lưới 10×10" },
-  { number: "2", text: "Đặt 5 tàu trên bảng: 1 tàu 2 ô, 2 tàu 3 ô, 1 tàu 4 ô, 1 tàu 5 ô" },
+  {
+    number: "2",
+    text: "Đặt 5 tàu trên bảng: 1 tàu 2 ô, 2 tàu 3 ô, 1 tàu 4 ô, 1 tàu 5 ô",
+  },
   { number: "3", text: "Lần lượt gọi tọa độ để tấn công" },
-  { number: "4", text: "Trúng thì tiếp tục đánh, trượt (Miss) thì chuyển lượt" },
+  {
+    number: "4",
+    text: "Trúng thì tiếp tục đánh, trượt (Miss) thì chuyển lượt",
+  },
   { number: "5", text: "Mỗi lượt có thời gian giới hạn" },
-  { number: "6", text: "Người đầu tiên đánh chìm hết 5 tàu của đối thủ sẽ thắng" },
+  {
+    number: "6",
+    text: "Người đầu tiên đánh chìm hết 5 tàu của đối thủ sẽ thắng",
+  },
 ];
 
 let currentStep = 0;
@@ -96,16 +105,16 @@ async function handleLogin(e) {
   try {
     // Generate player ID from backend (ensures uniqueness)
     const playerId = await API.generatePlayerId();
-    
+
     if (!playerId) {
       throw new Error("Không thể tạo ID người chơi. Vui lòng thử lại!");
     }
-    
+
     // Save to Storage utility (replaces direct localStorage calls)
     Storage.savePlayer(playerId, nickname);
-    
+
     console.log("Player created:", { playerId, playerName: nickname });
-    
+
     // Navigate to home page
     window.location.href = "./home.html";
   } catch (error) {
@@ -136,17 +145,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Event listeners
   button.addEventListener("click", handleLogin);
-  
+
   input.addEventListener("keypress", (e) => {
     if (e.key === "Enter") {
       button.click();
     }
   });
-  
+
   input.addEventListener("input", (e) => {
     const nickname = e.target.value.trim();
     updateInputFeedback(input, nickname);
-    
+
     const isValid = validateNickname(nickname).valid;
     button.disabled = !isValid;
     button.style.opacity = isValid ? "1" : "0.6";

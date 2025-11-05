@@ -1,0 +1,236 @@
+// 1vs1 Game Page Logic (WebSocket-driven)
+// - Connects WS with roomId/playerId
+// - Renders boards and places player's fleet
+// - Handles ATTACK_RESULT and GAME_OVER from server
+// - Manages turn enable/disable and a 20s timer (visual only)
+
+(function () {
+  const TURN_TIME = 20;
+
+  const els = {
+    player1Name: document.getElementById("player1Name"),
+    player2Name: document.getElementById("player2Name"),
+    turnIndicator: document.getElementById("turnIndicator"),
+    timer: document.getElementById("timer"),
+    playerBoard: document.getElementById("playerBoard"),
+    enemyBoard: document.getElementById("enemyBoard"),
+    playerBoardContainer: document.getElementById("playerBoardContainer"),
+    enemyBoardContainer: document.getElementById("enemyBoardContainer"),
+  };
+
+  const state = {
+    roomId: null,
+    playerId: null,
+    playerName: null,
+    isMyTurn: false,
+    isGameOver: false,
+    timerId: null,
+    remaining: TURN_TIME,
+  };
+
+  function qsParam(name) {
+    const url = new URL(window.location.href);
+    return url.searchParams.get(name);
+  }
+
+  function setNames(p1, p2) {
+    if (els.player1Name) els.player1Name.textContent = p1 || "Me";
+    if (els.player2Name) els.player2Name.textContent = p2 || "Opponent";
+  }
+
+  function setTurn(isMyTurn) {
+    state.isMyTurn = !!isMyTurn;
+    if (els.turnIndicator) {
+      els.turnIndicator.textContent = isMyTurn
+        ? "Your Turn"
+        : "Opponent's Turn";
+      els.turnIndicator.classList.toggle("your", isMyTurn);
+      els.turnIndicator.classList.toggle("enemy", !isMyTurn);
+    }
+    // Active highlight on board containers
+    if (els.enemyBoardContainer) {
+      els.enemyBoardContainer.classList.toggle("active", isMyTurn);
+    }
+    if (els.playerBoardContainer) {
+      els.playerBoardContainer.classList.toggle("active", !isMyTurn);
+    }
+
+    // Enable/disable enemy clicks
+    Board.disableAttacks("enemyBoard");
+    if (isMyTurn) {
+      Board.enableAttacks("enemyBoard", (pos) => onAttackCell(pos));
+    }
+
+    // Reset timer each time turn changes (visual only)
+    startTimer();
+  }
+
+  function startTimer() {
+    stopTimer();
+    state.remaining = TURN_TIME;
+    updateTimer();
+    state.timerId = setInterval(() => {
+      state.remaining -= 1;
+      updateTimer();
+      if (state.remaining <= 0) {
+        handleTimeout();
+      }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (state.timerId) {
+      clearInterval(state.timerId);
+      state.timerId = null;
+    }
+  }
+
+  function updateTimer() {
+    if (!els.timer) return;
+    els.timer.textContent = `${state.remaining}s`;
+    if (state.remaining <= 5) els.timer.style.color = "#ff1744";
+    else if (state.remaining <= 10) els.timer.style.color = "#ff9800";
+    else els.timer.style.color = "#4caf50";
+  }
+
+  function handleTimeout() {
+    stopTimer();
+    // Visual-only timeout: lock input until server advances turn
+    if (state.isGameOver) return;
+    Board.disableAttacks("enemyBoard");
+    // We wait for server to send next ATTACK_RESULT (e.g., opponent move) to toggle turns
+  }
+
+  function onAttackCell(position) {
+    if (!state.isMyTurn || state.isGameOver) return;
+    try {
+      WSManager.sendAttack(position);
+      // Prevent multi-clicks until server responds
+      Board.disableAttacks("enemyBoard");
+      // Do not update board immediately; wait for server ATTACK_RESULT for source of truth
+    } catch (err) {
+      console.error("Failed to send attack:", err);
+    }
+  }
+
+  function applyAttackVisual(targetBoardId, position, result) {
+    if (!position) return;
+    if (result === Protocol.RESULT.HIT || result === Protocol.RESULT.SUNK) {
+      Board.markHit(targetBoardId, position);
+    } else if (result === Protocol.RESULT.MISS) {
+      Board.markMiss(targetBoardId, position);
+    }
+  }
+
+  function onAttackResult(msg) {
+    // msg: { attacker, position, result, shipType, nextTurn }
+    const iAttacked = msg.attacker === state.playerId;
+
+    if (iAttacked) {
+      // Update enemy board
+      applyAttackVisual("enemyBoard", msg.position, msg.result);
+    } else {
+      // Opponent attacked me
+      applyAttackVisual("playerBoard", msg.position, msg.result);
+    }
+
+    // Turn handoff
+    const nextIsMine = msg.nextTurn === state.playerId;
+    setTurn(nextIsMine);
+  }
+
+  function onGameOver(msg) {
+    state.isGameOver = true;
+    stopTimer();
+    const iWon = msg.winner === state.playerId;
+    try {
+      Storage.updateStats(!!iWon);
+    } catch (_) {}
+    alert(iWon ? "You win" : "You lose");
+    // Navigate back to home after short delay
+    setTimeout(() => {
+      window.location.href = "/pages/home.html";
+    }, 1200);
+  }
+
+  function registerWsHandlers() {
+    WSManager.on(Protocol.SERVER_MSG.ATTACK_RESULT, onAttackResult);
+    WSManager.on(Protocol.SERVER_MSG.GAME_OVER, onGameOver);
+    WSManager.on("disconnect", ({ code, reason }) => {
+      alert(
+        `Mất kết nối (code: ${code}${reason ? `, reason: ${reason}` : ""}).`
+      );
+      window.location.href = "/pages/1vs1/entry.html";
+    });
+  }
+
+  async function primeUiFromRoom() {
+    try {
+      const room = await API.getRoomState(state.roomId);
+      if (room) {
+        // Names (best-effort; keys may vary depending on backend naming)
+        const p1 = room.player1Name || state.playerName || "Me";
+        const p2 = room.player2Name || "Opponent";
+        setNames(p1, p2);
+
+        // Determine initial turn if provided
+        if (room.currentTurn) {
+          setTurn(room.currentTurn === state.playerId);
+        } else {
+          // Fallback: disable until first ATTACK_RESULT
+          setTurn(false);
+          stopTimer();
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to get room state; fallback UI", e);
+      setNames(state.playerName, "Opponent");
+      setTurn(false);
+      stopTimer();
+    }
+  }
+
+  function placeOwnFleet() {
+    try {
+      const fleet = Storage.getFleet();
+      if (Array.isArray(fleet) && fleet.length) {
+        fleet.forEach((ship) => Board.placeShip("playerBoard", ship));
+      }
+    } catch (e) {
+      console.warn("No fleet found locally for rendering");
+    }
+  }
+
+  async function init() {
+    // Params
+    state.roomId = qsParam("roomId") || Storage.getRoomId();
+    state.playerId = qsParam("playerId") || Storage.getPlayerId();
+    state.playerName = Storage.getPlayerName();
+
+    if (!state.roomId || !state.playerId) {
+      alert("Thiếu roomId hoặc playerId");
+      window.location.href = "/pages/1vs1/entry.html";
+      return;
+    }
+
+    // Render boards
+    Board.render("playerBoard", true);
+    Board.render("enemyBoard", false);
+    placeOwnFleet();
+
+    // Prefill names and turn from room state (best-effort)
+    await primeUiFromRoom();
+
+    // Connect WS
+    try {
+      await WSManager.connect(state.roomId, state.playerId);
+      registerWsHandlers();
+    } catch (e) {
+      alert("Không thể kết nối WebSocket.");
+      window.location.href = "/pages/1vs1/entry.html";
+      return;
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
