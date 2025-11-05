@@ -177,8 +177,32 @@ body {
   background: #4682b4;
 }
 
+/* Ship placed on board - Higher specificity to prevent hover override */
+.cell.has-ship {
+  background: #4caf50 !important;
+  border: 1px solid #2e7d32;
+}
+
+.cell.has-ship:hover {
+  background: #66bb6a !important;
+}
+
 .cell.ship {
   background: #2e7d32;
+}
+
+/* Preview states during placement - High specificity */
+.cell.preview {
+  border: 2px solid #ffd700 !important;
+  transition: all 0.15s ease;
+}
+
+.cell.preview.valid {
+  background: rgba(76, 175, 80, 0.7) !important;
+}
+
+.cell.preview.invalid {
+  background: rgba(244, 67, 54, 0.7) !important;
 }
 
 /* Right side - Ships and buttons */
