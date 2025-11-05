@@ -59,7 +59,7 @@ Validate a single fleet (used for AI mode and within parallel validation).
 Checks:
   1. Correct count (5 ships)
   2. Correct types (Destroyer, Submarine, Cruiser, Battleship, Carrier)
-  3. No overlaps between ships (O(n²) pairwise check - CPU intensive)
+  3. No overlaps between ships
   4. All ships in bounds (10x10 grid)
   5. Valid orientations (Horizontal or Vertical only)
 
