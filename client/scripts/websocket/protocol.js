@@ -22,6 +22,7 @@ const Protocol = {
         ATTACK_RESULT: 'attack_result',  // Attack result (broadcast to both)
         GAME_OVER: 'game_over',          // Game ended
         GAME_START: 'game_start',        // Navigate both players to setup phase
+        PLAYER_READY: 'player_ready',    // Player ready status update
         ERROR: 'error'                    // Error message
     },
 
@@ -115,6 +116,12 @@ const Protocol = {
                     return {
                         type: this.SERVER_MSG.GAME_START,
                         roomId: contents.gsmRoomId
+                    };
+                case 'PlayerReadyMsg':
+                    return {
+                        type: this.SERVER_MSG.PLAYER_READY,
+                        playerId: contents.prmPlayerId,
+                        ready: contents.prmReady
                     };
                 case 'AttackResultMsg':
                     return {

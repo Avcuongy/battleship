@@ -44,6 +44,22 @@
 			window.location.href = target;
 		});
 
+			// When a player becomes ready, update UI statuses
+			WSManager.on(Protocol.SERVER_MSG.PLAYER_READY, (msg) => {
+				const pid = msg.playerId;
+				const isReady = !!msg.ready;
+				console.log('[WS] PLAYER_READY', pid, isReady);
+				if (pid === state.playerId) {
+					setReadyStatus(isReady);
+				} else {
+					if (els.player2Status) {
+						els.player2Status.textContent = isReady ? 'Ready' : 'Not Ready';
+						els.player2Status.classList.toggle('ready', isReady);
+						els.player2Status.classList.toggle('not-ready', !isReady);
+					}
+				}
+			});
+
 		// Disconnect handler (graceful)
 		WSManager.on('disconnect', ({ code, reason }) => {
 			alert(`Mất kết nối (code: ${code}${reason ? `, reason: ${reason}` : ''}). Quay về phòng vào lại.`);
@@ -93,11 +109,32 @@
 
 		setSelf(state.playerName || state.playerId);
 
+			// Load room state to fill player2 name and ready states (STM-backed)
+			try {
+				const room = await API.getRoomState(state.roomId);
+				if (room) {
+					if (els.player2Name) {
+						const p2n = room.grrPlayer2Name || room.player2Name || '—';
+						els.player2Name.textContent = p2n || '—';
+					}
+					// Initial statuses if available
+					if (typeof room.player1Ready === 'boolean' && els.player1Status) {
+						setReadyStatus(!!room.player1Ready);
+					}
+					if (typeof room.player2Ready === 'boolean' && els.player2Status) {
+						const rdy = !!room.player2Ready;
+						els.player2Status.textContent = rdy ? 'Ready' : 'Not Ready';
+						els.player2Status.classList.toggle('ready', rdy);
+						els.player2Status.classList.toggle('not-ready', !rdy);
+					}
+				}
+			} catch (_) {}
+
 		// Render board and ship palette
 			Board.render('gameBoard', true);
 			Ships.init('gameBoard', 'shipsSection');
 
-		// Connect WebSocket
+			// Connect WebSocket
 		try {
 			console.log(`[SETUP] Connecting WS: roomId=${state.roomId}, playerId=${state.playerId}`);
 			await WSManager.connect(state.roomId, state.playerId);

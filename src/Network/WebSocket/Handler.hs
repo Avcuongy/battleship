@@ -152,6 +152,9 @@ handleReady state conn roomId playerId readyMsg = do
             WS.sendTextData conn (encodeServerMessage errorMsg)
         
         Right _ -> do
+            -- Immediately broadcast this player's ready status
+            Broadcast.broadcastPlayerReady state roomId playerId True
+
             -- Check if both players are ready
             bothReady <- RoomMgr.checkBothReady 
                 (wsRoomManager state) roomId

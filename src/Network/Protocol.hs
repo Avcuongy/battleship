@@ -18,6 +18,7 @@ module Network.Protocol
         , StartMessage(..)
     , AttackResultMessage(..)
     , GameOverMessage(..)
+    , PlayerReadyMessage(..)
         , GameStartMessage(..)
     , ErrorMessage(..)
     
@@ -99,6 +100,7 @@ data ServerMessage
     = AttackResultMsg AttackResultMessage
     | GameOverMsg GameOverMessage
     | GameStartMsg GameStartMessage
+    | PlayerReadyMsg PlayerReadyMessage
     | ErrorMsg ErrorMessage
     deriving (Show, Eq, Generic)
 -- | Notify both clients to navigate to setup (pre-game placement)
@@ -144,6 +146,15 @@ data GameOverMessage = GameOverMessage
 
 instance FromJSON GameOverMessage
 instance ToJSON GameOverMessage
+-- | Player ready status update (broadcast to both players)
+data PlayerReadyMessage = PlayerReadyMessage
+    { prmPlayerId :: Text
+    , prmReady :: Bool
+    } deriving (Show, Eq, Generic)
+
+instance FromJSON PlayerReadyMessage
+instance ToJSON PlayerReadyMessage
+
 
 -- Example JSON:
 -- {

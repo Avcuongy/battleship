@@ -7,6 +7,7 @@ Send messages to all players in a room simultaneously.
 module Network.WebSocket.Broadcast
     ( broadcastToRoom
     , broadcastGameStart
+    , broadcastPlayerReady
     , broadcastAttackResult
     , broadcastGameOver
     , broadcastTimeout
@@ -61,6 +62,13 @@ broadcastGameStart :: WebSocketState -> Text -> IO ()
 broadcastGameStart state roomId = do
     putStrLn $ "Broadcasting game start for room: " ++ T.unpack roomId
     let msg = GameStartMsg $ GameStartMessage { gsmRoomId = roomId }
+    broadcastToRoom state roomId msg
+
+-- | Broadcast player ready status update
+broadcastPlayerReady :: WebSocketState -> Text -> Text -> Bool -> IO ()
+broadcastPlayerReady state roomId playerId isReady = do
+    putStrLn $ "Broadcasting ready status: " ++ T.unpack playerId ++ " -> " ++ show isReady
+    let msg = PlayerReadyMsg $ PlayerReadyMessage { prmPlayerId = playerId, prmReady = isReady }
     broadcastToRoom state roomId msg
 
 -- | Broadcast attack result
