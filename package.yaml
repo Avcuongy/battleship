@@ -1,10 +1,10 @@
 name: battleship
 version: 0.1.0.0
-github: "yourusername/battleship"
+github: "Avcuongy/battleship"
 license: MIT
-author: "Your Name"
-maintainer: "your.email@example.com"
-copyright: "2025 Your Name"
+author: "Avuongy+Salierie"
+maintainer: "none@gmail.com"
+copyright: "2025 Avcuongy, Salierie"
 
 extra-source-files:
   - README.md

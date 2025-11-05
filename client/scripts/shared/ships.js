@@ -46,10 +46,10 @@ const Ships = {
       return;
     }
 
-    // Setup click-based placement
-    this.setupShipSelection();
-    this.setupBoardInteraction();
-    this.setupRotation();
+  // Setup click-based placement
+  this.setupShipSelection();
+  this.setupBoardInteraction();
+  this.setupRotation();
 
   // Auto-select first available ship so hover/preview works immediately
   this.autoSelectFirstAvailable();
@@ -168,6 +168,37 @@ const Ships = {
           this.showPlacementPreview(row, col);
         }
       });
+    });
+  },
+
+  /**
+   * Public: Rebind events to current board cells (useful after DOM replacement/reset)
+   */
+  rebindEvents() {
+    if (!this.boardElement) return;
+    // Remove any lingering listeners by cloning cells, then reattach handlers
+    this.detachAllCellListeners();
+    this.setupBoardInteraction();
+  },
+
+  /**
+   * Remove all listeners from cells by cloning nodes in-place
+   */
+  detachAllCellListeners() {
+    if (!this.boardElement) return;
+    const cells = this.boardElement.querySelectorAll('.cell');
+    cells.forEach((cell) => {
+      const clone = cell.cloneNode(true);
+      // Preserve dataset attributes
+      if (cell.dataset) {
+        Object.keys(cell.dataset).forEach((k) => {
+          clone.dataset[k] = cell.dataset[k];
+        });
+      }
+      // Preserve class list
+      clone.className = cell.className;
+      // Replace node to drop listeners
+      cell.parentNode.replaceChild(clone, cell);
     });
   },
 
@@ -396,6 +427,9 @@ const Ships = {
     }
 
     console.log('Ships reset');
+
+    // Ensure listeners are fresh (in case DOM was replaced by other flows)
+    this.rebindEvents();
 
     // Re-enter placement mode with first ship for immediate preview
     this.autoSelectFirstAvailable();

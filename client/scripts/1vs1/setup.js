@@ -111,6 +111,10 @@
 
 		// Render board and ship palette ASAP (before network awaits)
 		Board.render('gameBoard', true);
+		// Ensure cells exist before initializing Ships (avoid race on slow paints)
+		if (els.board && els.board.querySelectorAll('.cell').length === 0) {
+			try { await new Promise(requestAnimationFrame); } catch (_) {}
+		}
 		Ships.init('gameBoard', 'shipsSection');
 
 		// Load room state to fill player2 name and ready states (STM-backed)
