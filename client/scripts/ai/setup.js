@@ -43,7 +43,7 @@ async function handleReady(e) {
   try {
     const fleet = Ships.getFleet();
     if (fleet.length !== 5) {
-      alert('Ð?t d? 5 tàu!');
+      alert('Not enough ships placed');
       return;
     }
     
@@ -54,7 +54,7 @@ async function handleReady(e) {
     }
     
     btn.disabled = true;
-    btn.textContent = 'X? lý...';
+    btn.textContent = 'Ready';
     
     const res = await API.startAIGame(playerData.playerId, playerData.playerName, fleet);
     if (!res || res.asrStatus !== 'success') throw new Error(res?.asrMessage || 'API error');
@@ -66,9 +66,9 @@ async function handleReady(e) {
     setTimeout(() => { window.location.href = './game.html'; }, 100);
     
   } catch (err) {
-    alert('L?i: ' + err.message);
+    alert('Error: ' + err.message);
     btn.disabled = false;
-    btn.textContent = 'S?N SÀNG';
+    btn.textContent = 'Ready';
   }
 }
 

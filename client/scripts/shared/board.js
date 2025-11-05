@@ -246,8 +246,6 @@ const Board = {
       if (cell.dataset.state === this.CELL_STATE.EMPTY || 
           cell.dataset.state === this.CELL_STATE.SHIP) {
         
-        cell.style.cursor = 'crosshair';
-        
         cell.addEventListener('click', () => {
           const position = {
             posRow: parseInt(cell.dataset.row),
@@ -283,7 +281,7 @@ const Board = {
 
     const cells = this.getAllCells(containerId);
     cells.forEach(cell => {
-      cell.style.cursor = 'default';
+      // Keep cursor unchanged; just remove listeners by cloning
       cell.replaceWith(cell.cloneNode(true)); // Remove all event listeners
     });
   },

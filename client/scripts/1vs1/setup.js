@@ -13,7 +13,7 @@
 		resetBtn: document.getElementById('resetBtn'),
 		board: document.getElementById('gameBoard'),
 	};
-
+	
 	const state = {
 		roomId: null,
 		playerId: null,
@@ -80,7 +80,7 @@
 				e.preventDefault();
 				const fleet = Ships.getFleet();
 				if (!fleet || fleet.length !== 5) {
-					alert('Hãy đặt đủ 5 tàu.');
+					alert('Not enough ships placed');
 					return;
 				}
 				const v = Validation.validateFleet(fleet);
