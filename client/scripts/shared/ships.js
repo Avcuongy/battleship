@@ -22,6 +22,7 @@ const Ships = {
   boardElement: null,
   shipsContainer: null,
   isPlacementMode: false,
+  lastHover: null,
 
   // ============================================================================
   // Initialization
@@ -38,6 +39,7 @@ const Ships = {
     this.fleet = [];
     this.currentOrientation = 'Horizontal';
     this.isPlacementMode = false;
+    this.lastHover = null;
 
     if (!this.boardElement) {
       console.error('Board element not found:', boardId);
@@ -49,7 +51,33 @@ const Ships = {
     this.setupBoardInteraction();
     this.setupRotation();
 
+  // Auto-select first available ship so hover/preview works immediately
+  this.autoSelectFirstAvailable();
+
     console.log('Ship placement initialized (click mode)');
+  },
+
+  /**
+   * Auto-select the first unplaced ship in the palette
+   */
+  autoSelectFirstAvailable() {
+    const first = document.querySelector('.ship-item:not(.placed)');
+    if (!first) return;
+    const shipName = first.dataset.name;
+    const shipSize = parseInt(first.dataset.size);
+
+    // Deselect previous
+    document.querySelectorAll('.ship-item').forEach(item => item.classList.remove('selected'));
+    // Select
+    first.classList.add('selected');
+
+    this.currentShip = {
+      name: shipName,
+      size: shipSize,
+      element: first
+    };
+    this.isPlacementMode = true;
+    if (this.boardElement) this.boardElement.classList.add('placement-mode');
   },
 
   // ============================================================================
@@ -87,6 +115,9 @@ const Ships = {
         };
 
         this.isPlacementMode = true;
+        if (this.boardElement) {
+          this.boardElement.classList.add('placement-mode');
+        }
         
         console.log('Ship selected:', shipName);
       });
@@ -105,6 +136,7 @@ const Ships = {
         if (this.isPlacementMode && this.currentShip) {
           const row = parseInt(cell.dataset.row);
           const col = parseInt(cell.dataset.col);
+          this.lastHover = { row, col };
           this.showPlacementPreview(row, col);
         }
       });
@@ -207,7 +239,14 @@ const Ships = {
     // Exit placement mode
     this.isPlacementMode = false;
     this.currentShip = null;
+    this.lastHover = null;
     this.hidePlacementPreview();
+    if (this.boardElement) {
+      this.boardElement.classList.remove('placement-mode');
+    }
+
+    // Auto-select next available ship so user can continue placing seamlessly
+    this.autoSelectFirstAvailable();
     
     // Enable ready button if we have at least 5 ships
     // (full validation happens on button click)
@@ -301,6 +340,9 @@ const Ships = {
     if (orientationText) {
       orientationText.textContent = this.currentOrientation;
     }
+    if (this.isPlacementMode && this.currentShip && this.lastHover) {
+      this.showPlacementPreview(this.lastHover.row, this.lastHover.col);
+    }
   },
 
   // ============================================================================
@@ -333,9 +375,13 @@ const Ships = {
     this.currentShip = null;
     this.currentOrientation = 'Horizontal';
     this.isPlacementMode = false;
+  this.lastHover = null;
 
     // Hide preview
     this.hidePlacementPreview();
+    if (this.boardElement) {
+      this.boardElement.classList.remove('placement-mode');
+    }
 
     // Update orientation display
     const orientationText = document.getElementById('orientationText');
@@ -350,6 +396,9 @@ const Ships = {
     }
 
     console.log('Ships reset');
+
+    // Re-enter placement mode with first ship for immediate preview
+    this.autoSelectFirstAvailable();
   },
 
   // ============================================================================

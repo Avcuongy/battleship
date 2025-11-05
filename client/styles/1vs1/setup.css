@@ -63,14 +63,21 @@ body {
   font-size: 1.1rem;
   font-weight: bold;
   letter-spacing: 2px;
+  padding: 5px 12px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
 }
 
 .player-status.not-ready {
-  color: #f44336;
+  color: #d32f2f;
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
 }
 
 .player-status.ready {
-  color: #4caf50;
+  color: #2e7d32;
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
 }
 
 /* Title - Center of bar */
@@ -164,7 +171,7 @@ body {
   width: 30px;
   height: 30px;
   background: #87ceeb;
-  cursor: pointer;
+  cursor: default;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -175,6 +182,11 @@ body {
 
 .cell:hover {
   background: #4682b4;
+}
+
+/* Show crosshair cursor while placing ships */
+.game-board.placement-mode .cell {
+  cursor: crosshair;
 }
 
 /* Ship placed on board - Higher specificity to prevent hover override */
@@ -191,18 +203,22 @@ body {
   background: #2e7d32;
 }
 
-/* Preview states during placement - High specificity */
+/* Preview states during placement - clearer like AI mode */
 .cell.preview {
-  border: 2px solid #ffd700 !important;
+  background: rgba(76, 175, 80, 0.3) !important;
+  border: 2px dashed #4caf50 !important;
   transition: all 0.15s ease;
 }
 
 .cell.preview.valid {
-  background: rgba(76, 175, 80, 0.7) !important;
+  background: rgba(76, 175, 80, 0.5) !important;
+  border-color: #4caf50 !important;
 }
 
 .cell.preview.invalid {
-  background: rgba(244, 67, 54, 0.7) !important;
+  background: rgba(244, 67, 54, 0.5) !important;
+  border-color: #f44336 !important;
+  cursor: not-allowed;
 }
 
 /* Right side - Ships and buttons */

@@ -109,30 +109,30 @@
 
 		setSelf(state.playerName || state.playerId);
 
-			// Load room state to fill player2 name and ready states (STM-backed)
-			try {
-				const room = await API.getRoomState(state.roomId);
-				if (room) {
-					if (els.player2Name) {
-						const p2n = room.grrPlayer2Name || room.player2Name || '—';
-						els.player2Name.textContent = p2n || '—';
-					}
-					// Initial statuses if available
-					if (typeof room.player1Ready === 'boolean' && els.player1Status) {
-						setReadyStatus(!!room.player1Ready);
-					}
-					if (typeof room.player2Ready === 'boolean' && els.player2Status) {
-						const rdy = !!room.player2Ready;
-						els.player2Status.textContent = rdy ? 'Ready' : 'Not Ready';
-						els.player2Status.classList.toggle('ready', rdy);
-						els.player2Status.classList.toggle('not-ready', !rdy);
-					}
-				}
-			} catch (_) {}
+		// Render board and ship palette ASAP (before network awaits)
+		Board.render('gameBoard', true);
+		Ships.init('gameBoard', 'shipsSection');
 
-		// Render board and ship palette
-			Board.render('gameBoard', true);
-			Ships.init('gameBoard', 'shipsSection');
+		// Load room state to fill player2 name and ready states (STM-backed)
+		try {
+			const room = await API.getRoomState(state.roomId);
+			if (room) {
+				if (els.player2Name) {
+					const p2n = room.grrPlayer2Name || room.player2Name || '—';
+					els.player2Name.textContent = p2n || '—';
+				}
+				// Initial statuses if available
+				if (typeof room.player1Ready === 'boolean' && els.player1Status) {
+					setReadyStatus(!!room.player1Ready);
+				}
+				if (typeof room.player2Ready === 'boolean' && els.player2Status) {
+					const rdy = !!room.player2Ready;
+					els.player2Status.textContent = rdy ? 'Ready' : 'Not Ready';
+					els.player2Status.classList.toggle('ready', rdy);
+					els.player2Status.classList.toggle('not-ready', !rdy);
+				}
+			}
+		} catch (_) {}
 
 			// Connect WebSocket
 		try {
