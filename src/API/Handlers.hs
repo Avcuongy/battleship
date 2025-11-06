@@ -101,6 +101,7 @@ getRoomHandler roomMgr roomId = do
                 , grrPlayer2Id = ST.player2Id room
                 , grrPlayer2Name = ST.player2Name room
                 , grrPlayer2Ready = Just (ST.player2Ready room)
+                , grrCurrentTurn = ST.currentTurn room
                 }
 
 -- GET /api/rooms/active

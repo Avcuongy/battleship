@@ -115,6 +115,7 @@ data GetRoomResponse = GetRoomResponse
     , grrPlayer2Id :: Maybe Text
     , grrPlayer2Name :: Maybe Text
     , grrPlayer2Ready :: Maybe Bool
+    , grrCurrentTurn :: Maybe Text  -- current player's ID if game in progress
     } deriving (Show, Generic)
 
 instance FromJSON GetRoomResponse

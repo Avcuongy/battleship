@@ -2,7 +2,7 @@
 // - Connects WS with roomId/playerId
 // - Renders boards and places player's fleet
 // - Handles ATTACK_RESULT and GAME_OVER from server
-// - Manages turn enable/disable and a 20s timer (visual only)
+// - Manages turn enable/disable and a timer (visual only)
 
 (function () {
   const TURN_TIME = 20;
@@ -43,7 +43,7 @@
     if (els.turnIndicator) {
       els.turnIndicator.textContent = isMyTurn
         ? "Your Turn"
-        : "Opponent's Turn";
+        : "Enemy's Turn";
       els.turnIndicator.classList.toggle("your", isMyTurn);
       els.turnIndicator.classList.toggle("enemy", !isMyTurn);
     }
@@ -146,11 +146,23 @@
     try {
       Storage.updateStats(!!iWon);
     } catch (_) {}
-    alert(iWon ? "You win" : "You lose");
-    // Navigate back to home after short delay
-    setTimeout(() => {
-      window.location.href = "/pages/home.html";
-    }, 1200);
+    // Show modal like AI mode
+    const modal = document.getElementById("gameOverModal");
+    const title = document.getElementById("modalTitle");
+    const playerNameEl = document.getElementById("modalPlayerName");
+    if (modal && title && playerNameEl) {
+      if (iWon) {
+        title.textContent = "WIN";
+        playerNameEl.textContent = state.playerName || "You";
+        modal.classList.add("win");
+      } else {
+        title.textContent = "LOSE";
+        const enemyName = els.player2Name?.textContent || "Enemy";
+        playerNameEl.textContent = enemyName;
+        modal.classList.add("lose");
+      }
+      modal.style.display = "flex"; // CSS defaults to none
+    }
   }
 
   function registerWsHandlers() {
@@ -168,18 +180,19 @@
     try {
       const room = await API.getRoomState(state.roomId);
       if (room) {
-        // Names (best-effort; keys may vary depending on backend naming)
-        const p1 = room.player1Name || state.playerName || "Me";
-        const p2 = room.player2Name || "Opponent";
+        // Names (support both grr* from API and plain fallback)
+        const p1 = room.grrPlayer1Name || room.player1Name || state.playerName || 'Me';
+        const p2 = room.grrPlayer2Name || room.player2Name || 'Opponent';
         setNames(p1, p2);
 
-        // Determine initial turn if provided
-        if (room.currentTurn) {
-          setTurn(room.currentTurn === state.playerId);
+        // Determine initial turn if provided (prefer grrCurrentTurn from API)
+        const ct = room.grrCurrentTurn || room.currentTurn;
+        if (ct) {
+          setTurn(ct === state.playerId);
         } else {
-          // Fallback: disable until first ATTACK_RESULT
-          setTurn(false);
-          stopTimer();
+          // Fallback: assume player1 starts (backend sets player1 as first turn)
+          const p1Id = room.grrPlayer1Id || room.player1Id;
+          if (p1Id) setTurn(p1Id === state.playerId); else { setTurn(false); stopTimer(); }
         }
       }
     } catch (e) {
@@ -230,6 +243,11 @@
       window.location.href = "/pages/1vs1/entry.html";
       return;
     }
+
+    // Modal button
+    document.getElementById("playAgainBtn")?.addEventListener("click", () => {
+      window.location.href = "../home.html";
+    });
   }
 
   document.addEventListener("DOMContentLoaded", init);
