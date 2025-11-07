@@ -327,8 +327,6 @@ function updateTurnIndicator() {
   if (!indicator) return;
   const yourTurn = !!gameState.isPlayerTurn;
   indicator.textContent = yourTurn ? "Your Turn" : "Enemy's Turn";
-  indicator.classList.toggle("your", yourTurn);
-  indicator.classList.toggle("enemy", !yourTurn);
 
   // Toggle active highlight on board containers (match 1vs1 UX)
   const playerC = document.getElementById("playerBoardContainer");
@@ -360,7 +358,7 @@ async function endGame(playerWon) {
 
   if (modal && title && playerNameEl) {
     // Winner-only unified display
-    title.textContent = "WINNER";
+    title.textContent = "WIN";
     playerNameEl.textContent = playerWon ? gameState.playerName : "AI";
     modal.classList.remove("win", "lose");
     modal.style.display = "flex";

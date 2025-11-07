@@ -48,8 +48,6 @@
       els.turnIndicator.textContent = isMyTurn
         ? "Your Turn"
         : "Enemy's Turn";
-      els.turnIndicator.classList.toggle("your", isMyTurn);
-      els.turnIndicator.classList.toggle("enemy", !isMyTurn);
     }
     // Active highlight on board containers
     if (els.enemyBoardContainer) {
@@ -161,7 +159,7 @@
     if (modal && title && playerNameEl) {
       // Winner-only display
       const winnerName = msg.winnerName || (iWon ? (state.playerName || "You") : (els.player2Name?.textContent || "Opponent"));
-      title.textContent = "WINNER";
+      title.textContent = "WIN";
       playerNameEl.textContent = winnerName;
       // Remove any win/lose styling classes to keep neutral UI
       modal.classList.remove("win", "lose");

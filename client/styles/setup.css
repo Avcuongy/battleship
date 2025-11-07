@@ -182,8 +182,8 @@ body {
   width: 30px;
   height: 30px;
   background: #87ceeb;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  cursor: default;
+  transition: background 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -191,8 +191,9 @@ body {
   font-weight: bold;
 }
 
-.cell:hover {
-  background: #4682b4;
+/* No hover emphasis for setup */
+.setup-page .cell:hover {
+  background: #87ceeb; /* keep same */
 }
 
 .cell.ship {
@@ -264,13 +265,14 @@ body {
   background: #9e9e9e;
 }
 
-/* Board hover effects when placing */
-.cell {
-  cursor: default;
+/* Board cells use hand pointer on setup pages */
+.setup-page .game-board .cell {
+  cursor: pointer;
 }
 
-.game-board.placement-mode .cell {
-  cursor: crosshair;
+/* In placement mode, still show pointer (no crosshair) */
+.setup-page .game-board.placement-mode .cell {
+  cursor: pointer !important;
 }
 
 /* Preview effects */

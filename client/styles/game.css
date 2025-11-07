@@ -70,23 +70,6 @@ body {
   gap: 8px;
 }
 
-.turn-indicator {
-  font-size: 2rem;
-  font-weight: bold;
-  letter-spacing: 3px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-  color: #2a5298;
-  text-transform: none;
-  transition: all 0.3s ease;
-}
-
-.turn-indicator.your {
-  color: #2a5298;
-}
-
-.turn-indicator.enemy {
-  color: #9c27b0;
-}
 
 .timer {
   font-size: 1.5rem;
