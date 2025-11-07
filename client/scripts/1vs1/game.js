@@ -39,7 +39,11 @@
   }
 
   function setTurn(isMyTurn) {
-    state.isMyTurn = !!isMyTurn;
+    // Only reset/restart timer when turn actually changes.
+    const next = !!isMyTurn;
+    const prev = state.isMyTurn;
+    const turnChanged = prev !== next;
+    state.isMyTurn = next;
     if (els.turnIndicator) {
       els.turnIndicator.textContent = isMyTurn
         ? "Your Turn"
@@ -55,14 +59,18 @@
       els.playerBoardContainer.classList.toggle("active", !isMyTurn);
     }
 
-    // Enable/disable enemy clicks
+    // Enable/disable enemy clicks (always re-apply to recover after we temporarily disabled on fire)
     Board.disableAttacks("enemyBoard");
     if (isMyTurn) {
       Board.enableAttacks("enemyBoard", (pos) => onAttackCell(pos));
     }
 
-    // Reset timer each time turn changes (visual only)
-    startTimer();
+    // Timer behavior:
+    // - Do NOT reset when a shot is a HIT (turn stays the same) → keep counting
+    // - Reset only when the turn actually changes (MISS or timeout)
+    if (turnChanged) {
+      startTimer();
+    }
   }
 
   function startTimer() {

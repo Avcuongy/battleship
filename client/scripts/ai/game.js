@@ -22,7 +22,7 @@ function init() {
 
   if (!gameId || !player.playerId || !fleet || fleet.length !== 5) {
     console.error("Missing data");
-    alert("Thiếu dữ liệu game!");
+    alert("Missing data !");
     window.location.href = "./setup.html";
     return;
   }

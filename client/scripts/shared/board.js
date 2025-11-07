@@ -168,7 +168,6 @@ const Board = {
     if (cell) {
       cell.classList.add("hit");
       cell.dataset.state = this.CELL_STATE.HIT;
-      cell.textContent = "×";
     }
   },
 
@@ -182,7 +181,6 @@ const Board = {
     if (cell) {
       cell.classList.add("miss");
       cell.dataset.state = this.CELL_STATE.MISS;
-      cell.textContent = "•";
     }
   },
 
