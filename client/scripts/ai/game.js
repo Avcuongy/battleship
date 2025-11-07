@@ -56,7 +56,7 @@ function init() {
   });
 
   startTimer();
-  updateFireIndicator(); // Set to default "FIRE"
+  updateTurnIndicator(); // Show turn like 1vs1 (Your Turn / Enemy's Turn)
 
   console.log("Game ready");
 }
@@ -121,6 +121,9 @@ function handleTimeout() {
   stopTimer();
 
   if (gameState.isGameOver) return;
+  // Visual: switch to Enemy's Turn while AI responds
+  gameState.isPlayerTurn = false;
+  updateTurnIndicator();
   // On timeout, we treat as a MISS by firing at a guaranteed-miss cell (odd row)
   // so backend advances AI move and returns control back to player after AI attacks.
   void (async () => {
@@ -271,6 +274,7 @@ async function handleEnemyBoardClick(e) {
     if (p && p.arResult === "miss") {
       stopTimer();
       gameState.isPlayerTurn = false;
+      updateTurnIndicator(); // Enemy's turn while AI moves
       const a = response.aarAiResult;
       if (a) {
         if (a.arResult === "hit" || a.arResult === "sunk") {
@@ -303,7 +307,7 @@ function switchToAITurn() {
   stopTimer();
 
   gameState.isPlayerTurn = false;
-  // No indicator update needed - keep showing FIRE
+  updateTurnIndicator();
   // With backend AI, the AI move is returned in the same response when player misses.
   // So here we don't proactively attack; we only manage timing.
 }
@@ -313,30 +317,30 @@ function switchToPlayerTurn() {
   console.log("Switch to player turn");
 
   gameState.isPlayerTurn = true;
-  updateFireIndicator(); // Reset to "FIRE"
+  updateTurnIndicator(); // Show Your Turn
   startTimer(); // Reset timer for new turn
 }
 
-// Update fire indicator to default "FIRE"
-function updateFireIndicator() {
+// Update center indicator like 1vs1 (Your Turn / Enemy's Turn)
+function updateTurnIndicator() {
   const indicator = document.getElementById("fireIndicator");
   if (!indicator) return;
+  const yourTurn = !!gameState.isPlayerTurn;
+  indicator.textContent = yourTurn ? "Your Turn" : "Enemy's Turn";
+  indicator.classList.toggle("your", yourTurn);
+  indicator.classList.toggle("enemy", !yourTurn);
 
-  indicator.textContent = "FIRE";
-  indicator.style.color = "#2a5298";
+  // Toggle active highlight on board containers (match 1vs1 UX)
+  const playerC = document.getElementById("playerBoardContainer");
+  const enemyC = document.getElementById("enemyBoardContainer");
+  if (enemyC) enemyC.classList.toggle("active", yourTurn);
+  if (playerC) playerC.classList.toggle("active", !yourTurn);
 }
 
 // Show notification (MISS / HIT / SUNK + shipType)
 function showNotification(message) {
-  const indicator = document.getElementById("fireIndicator");
-  if (!indicator) return;
-
-  indicator.textContent = message;
-  indicator.style.color = "#2a5298";
-
-  setTimeout(() => {
-    updateFireIndicator(); // Reset to "FIRE"
-  }, 1500);
+  // Keep the center text reserved for turn indication; just log for now.
+  console.log("[AI]", message);
 }
 
 // End game
@@ -355,29 +359,15 @@ async function endGame(playerWon) {
   const playerNameEl = document.getElementById("modalPlayerName");
 
   if (modal && title && playerNameEl) {
-    if (playerWon) {
-      title.textContent = "WIN";
-      playerNameEl.textContent = gameState.playerName;
-      modal.classList.add("win");
-    } else {
-      title.textContent = "LOSE";
-      playerNameEl.textContent = "AI";
-      modal.classList.add("lose");
-    }
-
+    // Winner-only unified display
+    title.textContent = "WINNER";
+    playerNameEl.textContent = playerWon ? gameState.playerName : "AI";
+    modal.classList.remove("win", "lose");
     modal.style.display = "flex";
   }
 }
 
-function handleTimeout() {
-  console.log("Timer timeout - treat as MISS");
-  stopTimer();
-
-  if (gameState.isGameOver) return;
-
-  // Switch to AI turn
-  switchToAITurn();
-}
+// Note: timeout handling is implemented earlier to trigger a guaranteed miss and process AI move.
 
 document.addEventListener("DOMContentLoaded", init);
 

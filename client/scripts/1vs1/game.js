@@ -159,16 +159,12 @@
     const title = document.getElementById("modalTitle");
     const playerNameEl = document.getElementById("modalPlayerName");
     if (modal && title && playerNameEl) {
-      if (iWon) {
-        title.textContent = "WIN";
-        playerNameEl.textContent = state.playerName || "You";
-        modal.classList.add("win");
-      } else {
-        title.textContent = "LOSE";
-        const enemyName = els.player2Name?.textContent || "Enemy";
-        playerNameEl.textContent = enemyName;
-        modal.classList.add("lose");
-      }
+      // Winner-only display
+      const winnerName = msg.winnerName || (iWon ? (state.playerName || "You") : (els.player2Name?.textContent || "Opponent"));
+      title.textContent = "WINNER";
+      playerNameEl.textContent = winnerName;
+      // Remove any win/lose styling classes to keep neutral UI
+      modal.classList.remove("win", "lose");
       modal.style.display = "flex"; // CSS defaults to none
     }
   }
