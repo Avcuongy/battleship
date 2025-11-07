@@ -56,7 +56,7 @@ function init() {
   });
 
   startTimer();
-  updateTurnIndicator(); // Show turn like 1vs1 (Your Turn / Enemy's Turn)
+    updateTurnIndicator(); // Initial turn indicator
 
   console.log("Game ready");
 }
@@ -323,7 +323,7 @@ function switchToPlayerTurn() {
 
 // Update center indicator like 1vs1 (Your Turn / Enemy's Turn)
 function updateTurnIndicator() {
-  const indicator = document.getElementById("fireIndicator");
+  const indicator = document.getElementById("turnIndicator");
   if (!indicator) return;
   const yourTurn = !!gameState.isPlayerTurn;
   indicator.textContent = yourTurn ? "Your Turn" : "Enemy's Turn";
