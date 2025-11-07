@@ -8,7 +8,7 @@ module Concurrent.Parallel
     , parallelMap
     , parallelFilter
     , sequentialEval
-    
+
     -- * Re-exports from Control.Parallel.Strategies
     , Strategy
     , rdeepseq
