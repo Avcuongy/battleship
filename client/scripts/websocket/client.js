@@ -35,9 +35,10 @@ class WebSocketManager {
       }
 
       // Allow full URL override via localStorage (useful for ngrok)
-      const wsOverride = (typeof window !== "undefined" && window.localStorage)
-        ? window.localStorage.getItem("battleship-ws-url")
-        : null;
+      const wsOverride =
+        typeof window !== "undefined" && window.localStorage
+          ? window.localStorage.getItem("battleship-ws-url")
+          : null;
 
       const wsProto =
         typeof window !== "undefined" &&
@@ -53,7 +54,11 @@ class WebSocketManager {
           : "localhost";
       // Include explicit '/' before query to ensure server receives '/?roomId=...'
       let wsUrl;
-      if (wsOverride && typeof wsOverride === "string" && wsOverride.trim().length > 0) {
+      if (
+        wsOverride &&
+        typeof wsOverride === "string" &&
+        wsOverride.trim().length > 0
+      ) {
         const base = wsOverride.trim();
         const sep = base.includes("?") ? "&" : "?";
         wsUrl = `${base}${sep}roomId=${roomId}&playerId=${playerId}`;

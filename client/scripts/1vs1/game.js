@@ -45,9 +45,7 @@
     const turnChanged = prev !== next;
     state.isMyTurn = next;
     if (els.turnIndicator) {
-      els.turnIndicator.textContent = isMyTurn
-        ? "Your Turn"
-        : "Enemy's Turn";
+      els.turnIndicator.textContent = isMyTurn ? "Your Turn" : "Enemy's Turn";
     }
     // Active highlight on board containers
     if (els.enemyBoardContainer) {
@@ -165,7 +163,11 @@
     const playerNameEl = document.getElementById("modalPlayerName");
     if (modal && title && playerNameEl) {
       // Winner-only display
-      const winnerName = msg.winnerName || (iWon ? (state.playerName || "You") : (els.player2Name?.textContent || "Opponent"));
+      const winnerName =
+        msg.winnerName ||
+        (iWon
+          ? state.playerName || "You"
+          : els.player2Name?.textContent || "Opponent");
       title.textContent = "WIN";
       playerNameEl.textContent = winnerName;
       // Remove any win/lose styling classes to keep neutral UI
@@ -180,7 +182,12 @@
     WSManager.on(Protocol.SERVER_MSG.TIMEOUT, (msg) => {
       // Server notified timeout; update turn accordingly
       try {
-        console.log("[WS] TIMEOUT from", msg.playerId, "nextTurn=", msg.nextTurn);
+        console.log(
+          "[WS] TIMEOUT from",
+          msg.playerId,
+          "nextTurn=",
+          msg.nextTurn
+        );
       } catch (_) {}
       const nextIsMine = msg.nextTurn === state.playerId;
       setTurn(nextIsMine);
@@ -198,8 +205,9 @@
       const room = await API.getRoomState(state.roomId);
       if (room) {
         // Names (support both grr* from API and plain fallback)
-        const p1 = room.grrPlayer1Name || room.player1Name || state.playerName || 'Me';
-        const p2 = room.grrPlayer2Name || room.player2Name || 'Opponent';
+        const p1 =
+          room.grrPlayer1Name || room.player1Name || state.playerName || "Me";
+        const p2 = room.grrPlayer2Name || room.player2Name || "Opponent";
         setNames(p1, p2);
 
         // Determine initial turn if provided (prefer grrCurrentTurn from API)
@@ -209,7 +217,11 @@
         } else {
           // Fallback: assume player1 starts (backend sets player1 as first turn)
           const p1Id = room.grrPlayer1Id || room.player1Id;
-          if (p1Id) setTurn(p1Id === state.playerId); else { setTurn(false); stopTimer(); }
+          if (p1Id) setTurn(p1Id === state.playerId);
+          else {
+            setTurn(false);
+            stopTimer();
+          }
         }
       }
     } catch (e) {
