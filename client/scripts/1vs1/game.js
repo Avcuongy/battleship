@@ -101,10 +101,17 @@
 
   function handleTimeout() {
     stopTimer();
-    // Visual-only timeout: lock input until server advances turn
     if (state.isGameOver) return;
+    // Inform server that we timed out to advance turn
+    try {
+      WSManager.sendTimeout();
+    } catch (e) {
+      console.warn("Failed to send timeout:", e);
+    }
+    // Optimistically update local UI to enemy's turn to avoid apparent freeze
+    setTurn(false);
+    // Lock input until server confirms next turn (or ATTACK_RESULT)
     Board.disableAttacks("enemyBoard");
-    // We wait for server to send next ATTACK_RESULT (e.g., opponent move) to toggle turns
   }
 
   function onAttackCell(position) {
@@ -170,6 +177,14 @@
   function registerWsHandlers() {
     WSManager.on(Protocol.SERVER_MSG.ATTACK_RESULT, onAttackResult);
     WSManager.on(Protocol.SERVER_MSG.GAME_OVER, onGameOver);
+    WSManager.on(Protocol.SERVER_MSG.TIMEOUT, (msg) => {
+      // Server notified timeout; update turn accordingly
+      try {
+        console.log("[WS] TIMEOUT from", msg.playerId, "nextTurn=", msg.nextTurn);
+      } catch (_) {}
+      const nextIsMine = msg.nextTurn === state.playerId;
+      setTurn(nextIsMine);
+    });
     WSManager.on("disconnect", ({ code, reason }) => {
       alert(
         `Mất kết nối (code: ${code}${reason ? `, reason: ${reason}` : ""}).`

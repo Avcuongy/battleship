@@ -12,6 +12,7 @@ const Protocol = {
     READY: "ready", // Player ready with fleet placement
     ATTACK: "attack", // Player attack
     START: "start", // Host signals to start setup
+    TIMEOUT: "timeout", // Client signals turn timeout
   },
 
   // ============================================================================
@@ -23,6 +24,7 @@ const Protocol = {
     GAME_OVER: "game_over", // Game ended
     GAME_START: "game_start", // Navigate both players to setup phase
     PLAYER_READY: "player_ready", // Player ready status update
+    TIMEOUT: "timeout", // Turn timeout notice
     ERROR: "error", // Error message
   },
 
@@ -89,6 +91,20 @@ const Protocol = {
     });
   },
 
+  /**
+   * Build timeout message (client-initiated)
+   * @param {string} playerId
+   * @returns {string} JSON string
+   */
+  buildTimeoutMessage(playerId) {
+    return JSON.stringify({
+      tag: "TimeoutClientMsg",
+      contents: {
+        tcmPlayerId: playerId,
+      },
+    });
+  },
+
   // ============================================================================
   // Message Parsers (Server → Client)
   // ============================================================================
@@ -138,6 +154,12 @@ const Protocol = {
             winner: contents.gomWinner,
             winnerName: contents.gomWinnerName,
             reason: contents.gomReason,
+          };
+        case "TimeoutServerMsg":
+          return {
+            type: this.SERVER_MSG.TIMEOUT,
+            playerId: contents.tsmPlayerId,
+            nextTurn: contents.tsmNextTurn,
           };
         case "ErrorMsg":
           return {

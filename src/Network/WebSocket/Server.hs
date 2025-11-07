@@ -13,19 +13,53 @@ import Network.HTTP.Types (status400, parseQuery)
 import qualified Data.Text as T
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.Text.Encoding as TE
+import Control.Concurrent (forkIO, threadDelay)
+import Control.Monad (forever, when)
 
 import qualified Network.WebSocket.Handler as Handler
+import qualified Network.WebSocket.Broadcast as Broadcast
 import Network.WebSocket.Types (WebSocketState(..))
+import qualified State.Manager.Room as RoomMgr
+import qualified Game.Timer as Timer
+import qualified State.Types
+import State.Types (GameStatus(..))
 
 -- ======================================================================
 -- | Start WebSocket server
 startWebSocketServer :: WebSocketState -> IO ()
 startWebSocketServer state = do
     putStrLn "WebSocket server running on port 9160"
+    -- Fork background timeout monitor
+    _ <- forkIO $ timeoutMonitor state
     run 9160 $ websocketsOr
         WS.defaultConnectionOptions
         (wsApp state)
         backupApp
+
+-- ======================================================================
+-- | Background thread: monitor active room for timeout every 2 seconds
+timeoutMonitor :: WebSocketState -> IO ()
+timeoutMonitor state = forever $ do
+    threadDelay (2 * 1000 * 1000)  -- 2 seconds
+    maybeRoomId <- RoomMgr.activeRoomId (wsRoomManager state)
+    case maybeRoomId of
+        Nothing -> return ()
+        Just roomId -> do
+            maybeRoom <- RoomMgr.getRoomState (wsRoomManager state) roomId
+            case maybeRoom of
+                Nothing -> return ()
+                Just room -> do
+                    -- Only check timeout if game is in progress
+                    when (State.Types.status room == InProgress) $ do
+                        case (State.Types.turnStartTime room, State.Types.currentTurn room) of
+                            (Just turnStart, Just currentPlayerId) -> do
+                                now <- Timer.getCurrentTimestamp
+                                when (Timer.checkTimeout turnStart now) $ do
+                                    putStrLn $ "[Monitor] Timeout detected for " ++ T.unpack currentPlayerId
+                                    -- Advance turn and broadcast
+                                    RoomMgr.nextTurn (wsRoomManager state) roomId
+                                    Broadcast.broadcastTimeout state roomId currentPlayerId
+                            _ -> return ()
 
 -- ======================================================================
 -- | Fallback for HTTP requests (non-WS)

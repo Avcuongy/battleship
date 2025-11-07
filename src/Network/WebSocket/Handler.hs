@@ -104,6 +104,9 @@ messageLoop state conn roomId playerId = forever $ do
                   Just (StartMsg startMsg) ->
                       handleStart state conn roomId playerId startMsg
 
+                  Just (TimeoutClientMsg tmsg) ->
+                      handleTimeoutClient state conn roomId playerId tmsg
+
 -- | Detect client keepalive ping messages in JSON form: {"type":"ping"}
 isClientPing :: BL.ByteString -> Bool
 isClientPing bs =
@@ -128,6 +131,19 @@ handleStart state _conn roomId playerId _startMsg = do
             if playerId == ST.player1Id room
                 then Broadcast.broadcastGameStart state roomId
                 else return ()
+
+            return ()
+
+-- ============================================================================
+-- Timeout (client-initiated) Handler (This is new)
+-- ============================================================================
+
+handleTimeoutClient :: WebSocketState -> WS.Connection -> Text -> Text
+                    -> TimeoutClientMessage -> IO ()
+handleTimeoutClient state _conn roomId playerId _tmsg = do
+    -- Advance turn to opponent and notify both players
+    RoomMgr.nextTurn (wsRoomManager state) roomId
+    Broadcast.broadcastTimeout state roomId playerId
 
 -- ============================================================================
 -- Ready Handler

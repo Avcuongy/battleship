@@ -16,10 +16,12 @@ module Network.Protocol
     , ReadyMessage(..)
     , AttackMessage(..)
         , StartMessage(..)
+    , TimeoutClientMessage(..)
     , AttackResultMessage(..)
     , GameOverMessage(..)
     , PlayerReadyMessage(..)
         , GameStartMessage(..)
+    , TimeoutServerMessage(..)
     , ErrorMessage(..)
     
     -- * Encoding/Decoding
@@ -43,6 +45,7 @@ data ClientMessage
     = ReadyMsg ReadyMessage
     | AttackMsg AttackMessage
     | StartMsg StartMessage
+    | TimeoutClientMsg TimeoutClientMessage
     deriving (Show, Eq, Generic)
 
 instance FromJSON ClientMessage
@@ -83,6 +86,14 @@ instance ToJSON StartMessage
 
 instance FromJSON AttackMessage
 instance ToJSON AttackMessage
+-- | Client informs timeout occurred on their turn
+data TimeoutClientMessage = TimeoutClientMessage
+    { tcmPlayerId :: Text
+    } deriving (Show, Eq, Generic)
+
+instance FromJSON TimeoutClientMessage
+instance ToJSON TimeoutClientMessage
+
 
 -- Example JSON:
 -- {
@@ -102,6 +113,7 @@ data ServerMessage
     | GameStartMsg GameStartMessage
     | PlayerReadyMsg PlayerReadyMessage
     | ErrorMsg ErrorMessage
+    | TimeoutServerMsg TimeoutServerMessage
     deriving (Show, Eq, Generic)
 -- | Notify both clients to navigate to setup (pre-game placement)
 data GameStartMessage = GameStartMessage
@@ -154,6 +166,15 @@ data PlayerReadyMessage = PlayerReadyMessage
 
 instance FromJSON PlayerReadyMessage
 instance ToJSON PlayerReadyMessage
+-- | Server notifies both clients that a timeout happened and whose turn is next
+data TimeoutServerMessage = TimeoutServerMessage
+    { tsmPlayerId :: Text   -- who timed out
+    , tsmNextTurn :: Text   -- next player id
+    } deriving (Show, Eq, Generic)
+
+instance FromJSON TimeoutServerMessage
+instance ToJSON TimeoutServerMessage
+
 
 
 -- Example JSON:

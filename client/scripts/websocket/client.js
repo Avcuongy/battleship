@@ -269,6 +269,15 @@ class WebSocketManager {
     const message = Protocol.buildStartMessage(this.playerId);
     return this.send(message);
   }
+
+  /**
+   * Send timeout message
+   * @returns {boolean}
+   */
+  sendTimeout() {
+    const message = Protocol.buildTimeoutMessage(this.playerId);
+    return this.send(message);
+  }
 }
 
 // Create singleton instance

@@ -127,8 +127,16 @@ broadcastGameOver state roomId winnerId = do
 broadcastTimeout :: WebSocketState -> Text -> Text -> IO ()
 broadcastTimeout state roomId playerId = do
     putStrLn $ "Timeout: " ++ T.unpack playerId
-    -- Could send timeout message if needed
-    return ()
+    -- Determine nextTurn from room state
+    maybeOpponent <- RoomMgr.getOpponentId (wsRoomManager state) roomId playerId
+    case maybeOpponent of
+        Nothing -> return ()
+        Just nextTurnId -> do
+            let msg = TimeoutServerMsg $ TimeoutServerMessage
+                        { tsmPlayerId = playerId
+                        , tsmNextTurn = nextTurnId
+                        }
+            broadcastToRoom state roomId msg
 
 -- ============================================================================
 -- Helper Functions
