@@ -1,4 +1,4 @@
-// AI Game Page (backend-driven)
+// AI Game Page
 const TURN_TIME = 20;
 
 let gameState = {
@@ -282,7 +282,7 @@ async function handleEnemyBoardClick(e) {
           Board.markMiss("playerBoard", a.arPosition);
         }
       }
-      
+
       // After AI move (no game over), give turn back to player
       switchToPlayerTurn();
     } else {
