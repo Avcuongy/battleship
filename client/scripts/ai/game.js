@@ -1,4 +1,4 @@
-// AI Game Page
+// AI Game Page (backend-driven)
 const TURN_TIME = 20;
 
 let gameState = {
@@ -8,6 +8,7 @@ let gameState = {
   playerFleet: [],
   isPlayerTurn: true,
   isGameOver: false,
+  awaitingResponse: false,
 };
 
 let turnTimer = null;
@@ -40,21 +41,6 @@ function init() {
 
   document.getElementById("player1Name").textContent = player.playerName;
   document.getElementById("player2Name").textContent = "AI";
-
-  const convertedFleet = convertFleet(fleet);
-  if (convertedFleet.length === 0) {
-    alert("Lỗi convert fleet!");
-    window.location.href = "./setup.html";
-    return;
-  }
-
-  if (typeof AIEngine === "undefined") {
-    alert("AIEngine không load!");
-    window.location.href = "./setup.html";
-    return;
-  }
-
-  AIEngine.initGame(convertedFleet);
 
   Board.render("playerBoard", true);
   Board.render("enemyBoard", false);
@@ -135,9 +121,99 @@ function handleTimeout() {
   stopTimer();
 
   if (gameState.isGameOver) return;
+  // On timeout, we treat as a MISS by firing at a guaranteed-miss cell (odd row)
+  // so backend advances AI move and returns control back to player after AI attacks.
+  void (async () => {
+    try {
+      gameState.awaitingResponse = true;
+      const missPos = findGuaranteedMissCell();
+      if (!missPos) {
+        // Fallback: pick any empty cell
+        const any = findAnyEmptyEnemyCell();
+        if (!any) return;
+        // Not guaranteed, but proceed
+        const resp = await API.attackAI(gameState.gameId, any);
+        await handleTimeoutResponse(resp);
+        return;
+      }
+      const response = await API.attackAI(gameState.gameId, missPos);
+      await handleTimeoutResponse(response);
+    } catch (e) {
+      console.error("Timeout handling failed:", e);
+    } finally {
+      gameState.awaitingResponse = false;
+    }
+  })();
+}
 
-  // Switch to AI turn
-  switchToAITurn();
+// Handle response path for timeout-triggered attack
+async function handleTimeoutResponse(response) {
+  if (!response) return;
+  const p = response.aarPlayerResult;
+  if (p) {
+    if (p.arResult === "miss") {
+      Board.markMiss("enemyBoard", p.arPosition);
+      showNotification("MISS");
+    } else {
+      // Shouldn't happen with guaranteed miss, but handle gracefully
+      if (p.arResult === "hit" || p.arResult === "sunk") {
+        Board.markHit("enemyBoard", p.arPosition);
+      }
+    }
+  }
+
+  if (response.aarGameOver) {
+    endGame(response.aarWinner === "player");
+    return;
+  }
+
+  const a = response.aarAiResult;
+  if (a) {
+    if (a.arResult === "hit" || a.arResult === "sunk") {
+      Board.markHit("playerBoard", a.arPosition);
+      if (a.arResult === "sunk" && a.arShipType) {
+        showNotification(`AI SUNK your ${a.arShipType}!`);
+      }
+    } else if (a.arResult === "miss") {
+      Board.markMiss("playerBoard", a.arPosition);
+    }
+  }
+
+  // After AI move, give turn back to player and reset timer
+  switchToPlayerTurn();
+}
+
+// Find an enemy cell that is guaranteed to be a MISS against default AI fleet
+function findGuaranteedMissCell() {
+  const enemyBoard = document.getElementById("enemyBoard");
+  if (!enemyBoard) return null;
+  const cells = enemyBoard.querySelectorAll(".cell");
+  for (const cell of cells) {
+    const row = parseInt(cell.dataset.row);
+    const col = parseInt(cell.dataset.col);
+    const state = cell.dataset.state || "empty";
+    if (state !== "empty") continue;
+    // AI default fleet occupies only even rows (0,2,4,6,8) horizontally at low columns.
+    // Any odd row is guaranteed miss.
+    if (row % 2 === 1) {
+      return { posRow: row, posCol: col };
+    }
+  }
+  return null;
+}
+
+// Fallback: find any empty enemy cell
+function findAnyEmptyEnemyCell() {
+  const enemyBoard = document.getElementById("enemyBoard");
+  if (!enemyBoard) return null;
+  const cells = enemyBoard.querySelectorAll(".cell");
+  for (const cell of cells) {
+    const state = cell.dataset.state || "empty";
+    if (state === "empty") {
+      return { posRow: parseInt(cell.dataset.row), posCol: parseInt(cell.dataset.col) };
+    }
+  }
+  return null;
 }
 
 // Enable clicks on enemy board
@@ -149,8 +225,8 @@ function enableEnemyBoardClicks() {
 }
 
 // Handle click on enemy board
-function handleEnemyBoardClick(e) {
-  if (gameState.isGameOver || !gameState.isPlayerTurn) return;
+async function handleEnemyBoardClick(e) {
+  if (gameState.isGameOver || !gameState.isPlayerTurn || gameState.awaitingResponse) return;
 
   const cell = e.target.closest(".cell");
   if (!cell) return;
@@ -160,40 +236,64 @@ function handleEnemyBoardClick(e) {
 
   if (isNaN(row) || isNaN(col)) return;
 
-  // Process attack
-  const result = AIEngine.processPlayerAttack({ posRow: row, posCol: col });
-  console.log("Player attack:", result);
+  // Avoid re-attacking the same cell
+  if (cell.dataset.state && cell.dataset.state !== "empty") return;
 
-  // Update cell visual
-  if (result.result === "hit" || result.result === "sunk") {
-    cell.classList.add("hit");
-    cell.style.backgroundColor = "#ff1744"; // Red
+  // Call backend to process attack
+  try {
+    gameState.awaitingResponse = true;
+    const response = await API.attackAI(gameState.gameId, { posRow: row, posCol: col });
+    if (!response) return;
 
-    if (result.result === "sunk") {
-      showNotification(`SUNK ${result.shipType}`); // SUNK + Tên Thuyền
-    } else {
-      showNotification("HIT"); // Just HIT
+    // Player result
+    const p = response.aarPlayerResult;
+    if (p) {
+      if (p.arResult === "hit" || p.arResult === "sunk") {
+        Board.markHit("enemyBoard", p.arPosition);
+        if (p.arResult === "sunk" && p.arShipType) {
+          showNotification(`SUNK ${p.arShipType}`);
+        } else {
+          showNotification("HIT");
+        }
+      } else if (p.arResult === "miss") {
+        Board.markMiss("enemyBoard", p.arPosition);
+        showNotification("MISS");
+      }
     }
 
-    // Check if player won
-    if (AIEngine.allShipsSunk(AIEngine.aiBoard)) {
-      endGame(true); // Player wins
+    // Game over?
+    if (response.aarGameOver) {
+      endGame(response.aarWinner === "player");
       return;
     }
 
-    // Player continues (no timer reset, no turn switch)
-    console.log("HIT - Player continues");
-  } else if (result.result === "miss") {
-    cell.classList.add("miss");
-    cell.style.backgroundColor = "#9e9e9e"; // Gray
-    showNotification("MISS"); // Just MISS
-
-    // Switch to AI turn
-    switchToAITurn();
-  } else if (result.result === "already_attacked") {
-    // User assumes they won't click already attacked cells
-    // But just in case, do nothing
-    console.log("Already attacked - ignored");
+    // If player missed, stop timer and AI has moved in the same response
+    if (p && p.arResult === "miss") {
+      stopTimer();
+      gameState.isPlayerTurn = false;
+      const a = response.aarAiResult;
+      if (a) {
+        if (a.arResult === "hit" || a.arResult === "sunk") {
+          Board.markHit("playerBoard", a.arPosition);
+          if (a.arResult === "sunk" && a.arShipType) {
+            showNotification(`AI SUNK your ${a.arShipType}!`);
+          }
+        } else if (a.arResult === "miss") {
+          Board.markMiss("playerBoard", a.arPosition);
+        }
+      }
+      
+      // After AI move (no game over), give turn back to player
+      switchToPlayerTurn();
+    } else {
+      // Player hit: continues, do not reset timer
+      // Keep current timer running; just ensure enemy board is clickable
+      gameState.isPlayerTurn = true;
+    }
+  } catch (err) {
+    console.error("AI attack failed:", err);
+  } finally {
+    gameState.awaitingResponse = false;
   }
 }
 
@@ -204,43 +304,8 @@ function switchToAITurn() {
 
   gameState.isPlayerTurn = false;
   // No indicator update needed - keep showing FIRE
-
-  // AI attacks immediately
-  setTimeout(() => {
-    if (gameState.isGameOver) return;
-
-    const aiResult = AIEngine.processAIAttack();
-    console.log("AI attack:", aiResult);
-
-    // Update player board visual
-    const playerBoard = document.getElementById("playerBoard");
-    const cell = playerBoard.querySelector(
-      `[data-row="${aiResult.position.posRow}"][data-col="${aiResult.position.posCol}"]`
-    );
-
-    if (cell) {
-      if (aiResult.result === "hit" || aiResult.result === "sunk") {
-        cell.classList.add("hit");
-        cell.style.backgroundColor = "#ff1744";
-
-        if (aiResult.result === "sunk") {
-          showNotification(`AI SUNK your ${aiResult.shipType}!`);
-        }
-
-        // Check if AI won
-        if (AIEngine.allShipsSunk(AIEngine.playerBoard)) {
-          endGame(false); // AI wins
-          return;
-        }
-      } else {
-        cell.classList.add("miss");
-        cell.style.backgroundColor = "#9e9e9e";
-      }
-    }
-
-    // Switch back to player turn
-    switchToPlayerTurn();
-  }, 500); // 500ms delay for visual effect
+  // With backend AI, the AI move is returned in the same response when player misses.
+  // So here we don't proactively attack; we only manage timing.
 }
 
 // Switch to player turn

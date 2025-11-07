@@ -44,7 +44,7 @@
     </div>
 
     <!-- Game Over Modal -->
-    <div class="modal-overlay" id="gameOverModal" style="display: none;">
+    <div class="modal-overlay" id="gameOverModal">
       <div class="modal-content">
         <h2 class="modal-title" id="modalTitle">WIN</h2>
         <div class="modal-player-name" id="modalPlayerName">Player Name</div>
@@ -52,22 +52,12 @@
       </div>
     </div>
 
-    <!-- Audio -->
-    <audio
-      id="fireSound"
-      src="../assets/audio/ship-fire.mp3"
-      preload="auto"
-    ></audio>
-
     <!-- Load utilities first -->
     <script src="../../scripts/utils/storage.js?v=2"></script>
     <script src="../../scripts/utils/api.js?v=2"></script>
 
     <!-- Load shared components -->
     <script src="../../scripts/shared/board.js?v=2"></script>
-
-    <!-- Load AI engine -->
-    <script src="../../scripts/ai/ai-engine.js?v=2"></script>
 
     <!-- Load page script -->
     <script src="../../scripts/ai/game.js?v=2"></script>
