@@ -442,6 +442,7 @@ cabal.project.local~
 .HTF/
 .ghc.environment.*
 data/
+docs/
 .hintrc
 __pycache__/
 STRUCTURE.md
