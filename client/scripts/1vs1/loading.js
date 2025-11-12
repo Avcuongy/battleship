@@ -191,6 +191,13 @@
       return;
     }
 
+    // Get room info to show Player 1 (host) details
+    const roomInfo = await API.getRoomState(state.roomId);
+    if (roomInfo) {
+      // Set Player 1 info (host)
+      setPlayer1(roomInfo.grrPlayer1Id || res.player1Id, roomInfo.grrPlayer1Name || res.player1Name || "Player 1");
+    }
+
     // Update right box to show self (joiner appears on right)
     setPlayer2(state.playerId, state.playerName);
     setLoading(false, "Đã tham gia phòng. Chờ chủ phòng bấm BẮT ĐẦU.");

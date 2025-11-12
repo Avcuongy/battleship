@@ -18,6 +18,8 @@
     roomId: null,
     playerId: null,
     playerName: null,
+    player1Id: null,
+    player2Id: null,
   };
 
   function qsParam(name) {
@@ -26,11 +28,14 @@
   }
 
   function setSelf(name) {
-    if (els.player1Name) els.player1Name.textContent = name || "Me";
+    // Don't update player1Name here - let room state handle it
+    // This prevents overwriting the correct player names
   }
 
   function setReadyStatus(isReady) {
     if (!els.player1Status) return;
+    // Check if current player is player1 or player2 based on room data
+    // This will be handled by registerWsHandlers PLAYER_READY messages
     els.player1Status.textContent = isReady ? "Ready" : "Not Ready";
     els.player1Status.classList.toggle("ready", isReady);
     els.player1Status.classList.toggle("not-ready", !isReady);
@@ -51,9 +56,17 @@
       const pid = msg.playerId;
       const isReady = !!msg.ready;
       console.log("[WS] PLAYER_READY", pid, isReady);
-      if (pid === state.playerId) {
-        setReadyStatus(isReady);
-      } else {
+      
+      // Determine which display box to update based on player ID
+      if (pid === state.player1Id) {
+        // This is player1's status
+        if (els.player1Status) {
+          els.player1Status.textContent = isReady ? "Ready" : "Not Ready";
+          els.player1Status.classList.toggle("ready", isReady);
+          els.player1Status.classList.toggle("not-ready", !isReady);
+        }
+      } else if (pid === state.player2Id) {
+        // This is player2's status
         if (els.player2Status) {
           els.player2Status.textContent = isReady ? "Ready" : "Not Ready";
           els.player2Status.classList.toggle("ready", isReady);
@@ -129,17 +142,31 @@
     }
     Ships.init("gameBoard", "shipsSection");
 
-    // Load room state to fill player2 name and ready states (STM-backed)
+    // Load room state to fill player names and ready states (STM-backed)
     try {
       const room = await API.getRoomState(state.roomId);
       if (room) {
-        if (els.player2Name) {
-          const p2n = room.grrPlayer2Name || room.player2Name || "—";
-          els.player2Name.textContent = p2n || "—";
+        // Store player IDs for later reference
+        state.player1Id = room.grrPlayer1Id || room.player1Id;
+        state.player2Id = room.grrPlayer2Id || room.player2Id;
+        
+        // Update player1 name from room state
+        if (els.player1Name) {
+          const p1n = room.grrPlayer1Name || room.player1Name || "Player 1";
+          els.player1Name.textContent = p1n;
         }
+        
+        if (els.player2Name) {
+          const p2n = room.grrPlayer2Name || room.player2Name || "Player 2";
+          els.player2Name.textContent = p2n;
+        }
+        
         // Initial statuses if available
         if (typeof room.player1Ready === "boolean" && els.player1Status) {
-          setReadyStatus(!!room.player1Ready);
+          const rdy = !!room.player1Ready;
+          els.player1Status.textContent = rdy ? "Ready" : "Not Ready";
+          els.player1Status.classList.toggle("ready", rdy);
+          els.player1Status.classList.toggle("not-ready", !rdy);
         }
         if (typeof room.player2Ready === "boolean" && els.player2Status) {
           const rdy = !!room.player2Ready;
