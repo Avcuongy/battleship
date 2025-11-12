@@ -6,10 +6,8 @@ module Network.WebSocket.Handler
 
 import qualified Network.WebSockets as WS
 import Control.Concurrent (forkIO, threadDelay)
-import Control.Concurrent.STM (atomically)
 import Control.Monad (forever, when)
 import Control.Exception (catch, SomeException, fromException)
-import qualified Network.WebSockets as WS
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.ByteString.Lazy as BL
@@ -135,15 +133,30 @@ handleStart state _conn roomId playerId _startMsg = do
             return ()
 
 -- ============================================================================
--- Timeout (client-initiated) Handler (This is new)
+-- Timeout (client-initiated) Handler
 -- ============================================================================
 
 handleTimeoutClient :: WebSocketState -> WS.Connection -> Text -> Text
                     -> TimeoutClientMessage -> IO ()
 handleTimeoutClient state _conn roomId playerId _tmsg = do
-    -- Advance turn to opponent and notify both players
-    RoomMgr.nextTurn (wsRoomManager state) roomId
-    Broadcast.broadcastTimeout state roomId playerId
+    putStrLn $ "Timeout signal from: " ++ T.unpack playerId
+
+    -- Verify it's actually this player's turn before advancing
+    maybeRoom <- RoomMgr.getRoomState (wsRoomManager state) roomId
+    case maybeRoom of
+        Nothing -> return ()
+        Just room -> do
+            let isPlayerTurn = ST.currentTurn room == Just playerId
+            if isPlayerTurn
+                then do
+                    -- Valid timeout: advance turn to opponent and notify both players
+                    putStrLn $ "Valid timeout, switching turn"
+                    RoomMgr.nextTurn (wsRoomManager state) roomId
+                    Broadcast.broadcastTimeout state roomId playerId
+                else do
+                    -- Not this player's turn, ignore timeout signal
+                    putStrLn $ "Ignored (not player's turn)"
+                    return ()
 
 -- ============================================================================
 -- Ready Handler
@@ -206,27 +219,40 @@ handleReady state conn roomId playerId readyMsg = do
 
 handleAttack :: WebSocketState -> WS.Connection -> Text -> Text 
              -> AttackMessage -> IO ()
-handleAttack state conn roomId playerId attackMsg = do
+handleAttack state _conn roomId playerId attackMsg = do
     putStrLn $ "Attack from " ++ T.unpack playerId 
              ++ " at " ++ show (amPosition attackMsg)
     
-    -- Check timeout (server-side validation)
-    now <- Timer.getCurrentTimestamp
-    maybeTurnStart <- RoomMgr.getTurnStartTime 
-        (wsRoomManager state) roomId
-    
-    case maybeTurnStart of
-        Nothing -> return ()  -- Room not found
-        Just turnStart -> do
-            if Timer.checkTimeout turnStart now
+    -- Verify it's this player's turn
+    maybeRoom <- RoomMgr.getRoomState (wsRoomManager state) roomId
+    case maybeRoom of
+        Nothing -> do
+            putStrLn "  → Room not found"
+            return ()
+        Just room -> do
+            let isPlayerTurn = ST.currentTurn room == Just playerId
+            if not isPlayerTurn
                 then do
-                    -- Timeout: next player's turn
-                    putStrLn $ "Timeout for " ++ T.unpack playerId
-                    RoomMgr.nextTurn (wsRoomManager state) roomId
-                    Broadcast.broadcastTimeout state roomId playerId
+                    putStrLn $ "  → Not player's turn, ignoring attack"
+                    return ()
                 else do
-                    -- Valid: process attack
-                    processAttack state roomId playerId (amPosition attackMsg)
+                    -- Check timeout (server-side validation)
+                    now <- Timer.getCurrentTimestamp
+                    maybeTurnStart <- RoomMgr.getTurnStartTime 
+                        (wsRoomManager state) roomId
+                    
+                    case maybeTurnStart of
+                        Nothing -> return ()  -- No turn start time recorded
+                        Just turnStart -> do
+                            if Timer.checkTimeout turnStart now
+                                then do
+                                    -- Timeout: reject attack, advance turn
+                                    putStrLn $ "  → Attack rejected (timeout), switching turn"
+                                    RoomMgr.nextTurn (wsRoomManager state) roomId
+                                    Broadcast.broadcastTimeout state roomId playerId
+                                else do
+                                    -- Valid: process attack
+                                    processAttack state roomId playerId (amPosition attackMsg)
 
 -- | Process valid attack
 processAttack :: WebSocketState -> Text -> Text -> Position -> IO ()

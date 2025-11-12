@@ -100,12 +100,21 @@
   function handleTimeout() {
     stopTimer();
     if (state.isGameOver) return;
+    
+    // Only send timeout if it's actually our turn
+    if (!state.isMyTurn) {
+      console.log("[TIMEOUT] Ignored - not our turn");
+      return;
+    }
+    
+    console.log("[TIMEOUT] Our turn timed out, notifying server");
     // Inform server that we timed out to advance turn
     try {
       WSManager.sendTimeout();
     } catch (e) {
       console.warn("Failed to send timeout:", e);
     }
+    
     // Optimistically update local UI to enemy's turn to avoid apparent freeze
     setTurn(false);
     // Lock input until server confirms next turn (or ATTACK_RESULT)
@@ -181,15 +190,14 @@
     WSManager.on(Protocol.SERVER_MSG.GAME_OVER, onGameOver);
     WSManager.on(Protocol.SERVER_MSG.TIMEOUT, (msg) => {
       // Server notified timeout; update turn accordingly
-      try {
-        console.log(
-          "[WS] TIMEOUT from",
-          msg.playerId,
-          "nextTurn=",
-          msg.nextTurn
-        );
-      } catch (_) {}
+      console.log(
+        "[WS] TIMEOUT from player:",
+        msg.playerId,
+        "nextTurn=",
+        msg.nextTurn
+      );
       const nextIsMine = msg.nextTurn === state.playerId;
+      // setTurn will automatically restart timer when turn changes
       setTurn(nextIsMine);
     });
     WSManager.on("disconnect", ({ code, reason }) => {
